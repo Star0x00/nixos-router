@@ -1,11 +1,13 @@
 # Base system: hostname, locale, users, packages, ssh, nix settings.
 {
   pkgs,
+  inputs,
   ...
 }:
 
 let
   net = import ./net.nix;
+  agentsPkgs = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
 in
 {
   networking.hostName = "nixos-router";
@@ -44,6 +46,8 @@ in
     nodejs-slim
     nodejs-slim.npm
     fastfetch
+    agentsPkgs.pi
+    agentsPkgs.dsh
   ];
 
   services.openssh = {
