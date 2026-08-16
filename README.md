@@ -42,6 +42,7 @@ nixos-rebuild switch --flake .#router --target-host root@10.10.10.1 --use-remote
 
 ## 注意
 
-- `net.nix` 含 SSH authorized key 等敏感信息，仓库应保持私有
-- `services/adguardhome.nix` 未启用（旧方案），仅保留参考
+- `net.nix` 里的 SSH key 是**公钥**,公开无害(私钥才需要保密)
+- 若公开仓库,唯一值得留意的是 `services/sub-store.nix` 里的防扫路径 `SUB_STORE_FRONTEND_BACKEND_PATH`(属于弱的纵深防御,非机密)
+- `services/adguardhome.nix` 未启用(旧方案),仅保留参考
 - `pi-coding-agent` 等 agent 包不在本仓库（后续由独立 flake 提供）
