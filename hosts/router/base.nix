@@ -48,6 +48,7 @@ in
     fastfetch
     agentsPkgs.pi
     agentsPkgs.dsh
+    just
   ];
 
   services.openssh = {

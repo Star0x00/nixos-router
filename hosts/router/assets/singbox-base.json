@@ -137,6 +137,25 @@
       "tolerance": 50
     },
     {
+      "type": "urltest",
+      "tag": "🚀 JP",
+      "interrupt_exist_connections": true,
+      "outbounds": [
+        "日本A01 | IEPL",
+        "日本A02 | IEPL",
+        "日本A03 | IEPL",
+        "日本A04 | IEPL",
+        "日本A07 | IEPL",
+        "日本A08 | IEPL",
+        "日本A09 | IEPL",
+        "日本A10 | IEPL",
+        "日本A11 | IEPL"
+      ],
+      "url": "https://cp.cloudflare.com/generate_204",
+      "interval": "1m",
+      "tolerance": 50
+    },
+    {
       "type": "selector",
       "tag": "🇺🇸 美国",
       "interrupt_exist_connections": true,
@@ -203,6 +222,29 @@
       },
       {
         "rule_set": [
+          "meta"
+        ],
+        "action": "route",
+        "outbound": "🚀 JP"
+      },
+      {
+        "domain": [
+          "opencode.ai",
+	  "meta.ai"
+        ],
+        "action": "route",
+        "outbound": "🚀 JP"
+      },
+      {
+        "domain_keyword": [
+          "opencode",
+	  "meta"
+        ],
+        "action": "route",
+        "outbound": "🚀 JP"
+      },
+      {
+        "rule_set": [
           "bilibili",
           "bilibili2",
           "bilibili-cdn"
@@ -261,6 +303,13 @@
         "tag": "volcengine",
         "format": "binary",
         "url": "https://cdn.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-volcengine.srs",
+        "download_detour": "🇭🇰 香港"
+      },
+      {
+        "type": "remote",
+        "tag": "meta",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-meta.srs",
         "download_detour": "🇭🇰 香港"
       },
       {
