@@ -9,7 +9,7 @@ switch:
 	sudo nixos-rebuild switch --flake ~/nixos-router#router
 
 # 构建本地 CI runner 镜像并载入路由器 podman(不推 registry)
-# 首次构建报 hash mismatch 时, 把报错里 “got: sha256-...” 填进 flake.nix 的 ciRunner.fromImage.outputHash 再跑
+# 换 base 镜像报 hash mismatch 时, 把报错里 “got: sha256-...” 填进 pkgs/ci-runner.nix 的 outputHash 再跑
 ci-runner:
 	nix build .#ciRunner
 	sudo podman load -i result
