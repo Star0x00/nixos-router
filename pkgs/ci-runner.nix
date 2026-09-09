@@ -3,7 +3,7 @@
 # 改 tag 时需同步 hosts/router/services/forgejo/actions.nix 的 labels 里的 ci-runner:${tag}。
 { pkgs, lib }:
 let
-  tag = "24.04-1";
+  tag = "24.04-2";
 in
 pkgs.dockerTools.buildImage {
   name = "ci-runner";
@@ -37,7 +37,7 @@ pkgs.dockerTools.buildImage {
       nodejs_24           # actions/checkout 等 JS action 需要
       jq
       openssh
-      buildah             # daemonless OCI 构建, 无需 docker daemon
+      kaniko              # 容器内 daemonless 构建(不挂 socket, 不碰 overlay; buildah>=1.44 在容器里会撞嵌套 overlay)
       skopeo              # daemonless 镜像推送/拷贝
       pkgs.dockerTools.caCertificates
     ];
