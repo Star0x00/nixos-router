@@ -12,6 +12,8 @@ in
     instances.forgejo = {
       enable = true;                 # 填好 uuid + 写好 token 后再置 true
       settings = {
+        # 容器 job 共享宿主网络, 流量即本机进程 → dae 域名级分流/代理全生效(否则只按 IP geo 分流)
+        container.network = "host";
         # 标签名 = workflow 的 runs-on
         runner.labels = [
           # 自建本地镜像(ubuntu 24.04 + node/git/kaniko/skopeo), 定义见 pkgs/ci-runner.nix。
