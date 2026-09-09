@@ -236,14 +236,6 @@
         "outbound": "🚀 JP"
       },
       {
-        "domain_keyword": [
-          "opencode",
-	  "meta"
-        ],
-        "action": "route",
-        "outbound": "🚀 JP"
-      },
-      {
         "rule_set": [
           "bilibili",
           "bilibili2",

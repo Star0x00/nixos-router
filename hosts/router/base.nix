@@ -42,12 +42,10 @@ in
     nixfmt
     usbutils
     pciutils
-    pi-coding-agent
     nodejs-slim
     nodejs-slim.npm
     fastfetch
     agentsPkgs.pi
-    agentsPkgs.dsh
     just
   ];
 
