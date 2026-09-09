@@ -10,7 +10,7 @@ in
   services.forgejo-runner = {
     package = pkgs.forgejo-runner;
     instances.forgejo = {
-      enable = false;                 # 填好 uuid + 写好 token 后再置 true
+      enable = true;                 # 填好 uuid + 写好 token 后再置 true
       settings = {
         # 标签名 = workflow 的 runs-on
         runner.labels = [
@@ -23,7 +23,7 @@ in
         # 新版 runner 用 uuid + token 一对连接(旧 Registration Token 已废弃)
         server.connections.forgejo = {
           url = "http://${net.lanIp}:3000/";
-          uuid = "REPLACE_WITH_UUID_FROM_UI";
+          uuid = "fefa298a-e162-4ebb-9e2b-9c58c4d147e5";
         };
       };
       # token 从文件经 systemd LoadCredential 读, 不明文进 nix store
