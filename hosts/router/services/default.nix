@@ -6,6 +6,9 @@
     ./kea.nix
     ./sing-box.nix
     ./dae.nix
-    ./sub-store.nix
+    ./sub-store/container.nix
+    ./memos/server.nix
+    ./forgejo/server.nix
+    ./forgejo/actions.nix
   ];
 }
