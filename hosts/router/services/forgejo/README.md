@@ -40,8 +40,8 @@ Actions 用 podman 跑 job, 不引入 docker。
 2. 把 uuid 填到 `actions.nix` 的 `server.connections.forgejo.uuid`;
    把 token 写入路由器 `/etc/forgejo-runner/token`(root:root 0600)。
 3. 把 `actions.nix` 里 `enable` 改 `true`, 重新部署。
-4. 本地 CI job 镜像(`ci-runner:24.04-3`, 定义在 `pkgs/ci-runner.nix`): 首次执行 `just ci-runner` 构建并载入 podman
-   (换 base 镜像时按报错回填 `outputHash`); 以后改了镜像重跑该命令。
+4. 本地 CI job 镜像(`ci-runner:24.04`, 定义在 `pkgs/ci-runner.nix`): 执行 `just ci-runner` 构建并载入 podman
+   (换 base 镜像时按报错回填 `outputHash`); 以后改了镜像重跑该命令即可(固定 tag, 记得重新 load)。
 
 ## 数据与备份
 

@@ -3,7 +3,7 @@
 # 改 tag 时需同步 hosts/router/services/forgejo/actions.nix 的 labels 里的 ci-runner:${tag}。
 { pkgs, lib }:
 let
-  tag = "24.04-3";
+  tag = "24.04";
   # nixpkgs 的 kaniko 包二进制名是 executor(mainProgram), 包一层 kaniko 命令名以便 workflow 直接调用
   kaniko = pkgs.writeShellScriptBin "kaniko" ''
     exec ${lib.getExe pkgs.kaniko} "$@"
