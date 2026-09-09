@@ -14,8 +14,10 @@ in
       settings = {
         # 标签名 = workflow 的 runs-on
         runner.labels = [
-          "ubuntu-latest:docker://catthehacker/ubuntu:act-latest"
-          # "self-hosted:host"        # 直接在主机跑, 适合 nix 任务
+          # 自建本地镜像(ubuntu 24.04 + node/git/buildah/skopeo), 见 flake.nix 的 ciRunner。
+          # 改镜像后: just ci-runner(构建 + podman load), 并同步这里的 tag。
+          "ubuntu-latest:docker://ci-runner:24.04-1"
+          # "nix:host"                  # 直接在主机跑 nix, 无需镜像
         ];
         # 新版 runner 用 uuid + token 一对连接(旧 Registration Token 已废弃)
         server.connections.forgejo = {

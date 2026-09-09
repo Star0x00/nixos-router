@@ -6,7 +6,7 @@ Actions 用 podman 跑 job, 不引入 docker。
 ## 访问地址
 
 - **Web**: `http://10.10.10.1:3000`
-- **Git-over-SSH**: `ssh://git@10.10.10.1:2222/<owner>/<repo>.git`(22 被系统 sshd 占用)
+- **Git-over-SSH**: `ssh://forgejo@10.10.10.1/<owner>/<repo>.git`(走系统 sshd 的 forgejo 用户, 端口 22)
 - **镜像仓库**: 内置(与代码同账号), 纯 HTTP 所以推送要关 tls 校验:
   `podman push --tls-verify=false 10.10.10.1:3000/<owner>/<image>`
 
@@ -40,6 +40,8 @@ Actions 用 podman 跑 job, 不引入 docker。
 2. 把 uuid 填到 `actions.nix` 的 `server.connections.forgejo.uuid`;
    把 token 写入路由器 `/etc/forgejo-runner/token`(root:root 0600)。
 3. 把 `actions.nix` 里 `enable` 改 `true`, 重新部署。
+4. 本地 CI job 镜像(`ci-runner:24.04-1`): 首次执行 `just ci-runner` 构建并载入 podman
+   (第一次构建会用报错里的哈希回填 `flake.nix` 的 `outputHash`); 以后改了镜像重跑该命令。
 
 ## 数据与备份
 

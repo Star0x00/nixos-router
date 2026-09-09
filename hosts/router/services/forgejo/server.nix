@@ -5,7 +5,6 @@ let
   net = import ../../net.nix;
   dataDir = "/var/lib/forgejo";
   httpPort = 3000;
-  sshPort = 2222;
 in
 {
   # 数据独立子卷(物理子卷需一次性创建, 见 README); owner 由模块 tmpfiles 自动改成 forgejo
@@ -28,8 +27,8 @@ in
         HTTP_ADDR = net.lanIp;           # 只绑内网
         HTTP_PORT = httpPort;
         DISABLE_SSH = false;
-        SSH_PORT = sshPort;              # 22 被系统 sshd 占用
-        SSH_LISTEN_PORT = sshPort;
+        # git-over-SSH 走系统 sshd(forgejo 用户, 端口 22), 未开内置 SSH server。
+        # 故 SSH_PORT 保持默认 22(web 上 clone 地址不带端口), 不设 SSH_LISTEN_PORT。
       };
       service.DISABLE_REGISTRATION = true; # 只自己建管理员, 首建时临时置 false
       packages.ENABLED = true;             # 内置 OCI/Docker 镜像仓库
