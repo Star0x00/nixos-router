@@ -17,18 +17,9 @@
 
   outputs =
     { nixpkgs, ... }@inputs:
-    let
-      system = "x86_64-linux";
-      pkgs = nixpkgs.legacyPackages.${system};
-      ciRunner = import ./pkgs/ci-runner.nix {
-        inherit pkgs;
-        inherit (nixpkgs) lib;
-      };
-    in
     {
-      packages.${system}.ciRunner = ciRunner;
       nixosConfigurations.router = nixpkgs.lib.nixosSystem {
-        inherit system;
+        system = "x86_64-linux";
         specialArgs = { inherit inputs; };
         modules = [ ./hosts/router ];
       };

@@ -14,14 +14,17 @@ in
   systemd.services.dae = {
     after = [
       "network-online.target"
-      "kea-dhcp4.service"
-      "sing-box.service"
+      "kea-dhcp4-server.service"
+      "sing-box-a.service"
+      "sing-box-b.service"
     ];
     wants = [
       "network-online.target"
-      "kea-dhcp4.service"
-      "sing-box.service"
+      "kea-dhcp4-server.service"
+      "sing-box-a.service"
+      "sing-box-b.service"
     ];
-    requires = [ "sing-box.service" ];
+    # B 挂了也要让 dae 起来(A/本机流不受影响),所以只 requires a
+    requires = [ "sing-box-a.service" ];
   };
 }

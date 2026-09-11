@@ -1,7 +1,7 @@
 # Forgejo — 自托管代码托管 + 内置 OCI(容器镜像)仓库
 
 原生 NixOS 模块部署(单 Go 二进制), 数据放独立 btrfs 子卷 + snapper 快照。
-Actions 用 podman 跑 job, 不引入 docker。
+Actions 直接在本机(host 模式)执行 job, 直接用宿主 podman build/push, 不引入 docker、也不用 job 容器镜像。
 
 ## 访问地址
 
@@ -13,7 +13,7 @@ Actions 用 podman 跑 job, 不引入 docker。
 ## 文件
 
 - `server.nix` — Forgejo 服务、子卷挂载、snapper 快照
-- `actions.nix` — Actions runner(podman)
+- `actions.nix` — Actions runner(host 模式, 直接用宿主 podman)
 - 子卷与快照说明见下「数据与备份」
 
 ## 首次部署
@@ -40,8 +40,23 @@ Actions 用 podman 跑 job, 不引入 docker。
 2. 把 uuid 填到 `actions.nix` 的 `server.connections.forgejo.uuid`;
    把 token 写入路由器 `/etc/forgejo-runner/token`(root:root 0600)。
 3. 把 `actions.nix` 里 `enable` 改 `true`, 重新部署。
-4. 本地 CI job 镜像(`ci-runner:24.04`, 定义在 `pkgs/ci-runner.nix`): 执行 `just ci-runner` 构建并载入 podman
-   (换 base 镜像时按报错回填 `outputHash`); 以后改了镜像重跑该命令即可(固定 tag, 记得重新 load)。
+4. workflow 的 `runs-on` 用 `nixos`(对应 `actions.nix` 里的 `nixos:host` label);
+   构建/推送镜像直接用 host 上的 `podman`(job 就在本机跑, 产物/缓存都落宿主 podman;
+   `10.10.10.1:3000` 已在 `actions.nix` 配 insecure, `podman push` 走纯 HTTP):
+
+   ```yaml
+   jobs:
+     build:
+       runs-on: nixos
+       steps:
+         - run: podman build -t 10.10.10.1:3000/<owner>/<image>:<tag> .
+         - run: podman push 10.10.10.1:3000/<owner>/<image>:<tag>
+   ```
+
+   需要认证时用 `podman login`(凭据持久化在 runner 的 HOME)或 `podman push --creds <user>:<token>`。
+
+   ⚠️ host 模式的 job 以 root 在整台路由器上执行(等于把宿主交给 workflow), 只对可信仓库开。
+   工具链来自 `actions.nix` 的 `hostPackages`(podman/git/skopeo/node 等), 改完重新部署即可。
 
 ## 数据与备份
 

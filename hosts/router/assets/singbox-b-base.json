@@ -1,0 +1,613 @@
+{
+  "log": {
+    "disabled": false,
+    "level": "warn",
+    "timestamp": true
+  },
+  "dns": {
+    "servers": [
+      {
+        "type": "https",
+        "tag": "dns-resolver",
+        "server": "223.5.5.5",
+        "server_port": 443,
+        "path": "/dns-query"
+      }
+    ],
+    "strategy": "prefer_ipv4"
+  },
+  "ntp": {
+    "enabled": true,
+    "server": "ntp.aliyun.com",
+    "server_port": 123,
+    "interval": "30m"
+  },
+  "http_clients": [
+    {
+      "tag": "ruleset-dl",
+      "detour": "🇭🇰 香港"
+    }
+  ],
+  "endpoints": [],
+  "inbounds": [
+    {
+      "type": "socks",
+      "tag": "socks-in",
+      "listen_port": 2081,
+      "listen": "127.0.0.1"
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "selector",
+      "tag": "🎯 Direct",
+      "interrupt_exist_connections": true,
+      "outbounds": [
+        "direct",
+        "block"
+      ]
+    },
+    {
+      "type": "selector",
+      "tag": "🚀 节点选择",
+      "interrupt_exist_connections": true,
+      "outbounds": [
+        "🚀 Google",
+        "🚀 Cloudflare",
+        "🇭🇰 香港",
+        "🇸🇬 新加坡",
+        "🇯🇵 日本",
+        "🇺🇸 美国",
+        "🇰🇷 韩国",
+        "🇻🇳 越南",
+        "🇹🇷 土耳其",
+        "🇫🇷 法国",
+        "🇩🇪 德国",
+        "🇬🇧 英国",
+        "🇹🇭 泰国"
+      ]
+    },
+    {
+      "type": "urltest",
+      "tag": "🇭🇰 香港",
+      "interrupt_exist_connections": true,
+      "outbounds": [
+        "香港1|AnyTLS[1x]",
+        "香港2|AnyTLS[1x]",
+        "香港3|AnyTLS[1x]",
+        "香港4|AnyTLS[1x]"
+      ],
+      "url": "https://cp.cloudflare.com/generate_204",
+      "interval": "1m",
+      "tolerance": 50
+    },
+    {
+      "type": "urltest",
+      "tag": "🇸🇬 新加坡",
+      "interrupt_exist_connections": true,
+      "outbounds": [
+        "新加坡1|AnyTLS[1x]",
+        "新加坡2|AnyTLS[1x]",
+        "新加坡3|AnyTLS[1x]",
+        "新加坡4|AnyTLS[1x]"
+      ],
+      "url": "https://cp.cloudflare.com/generate_204",
+      "interval": "1m",
+      "tolerance": 50
+    },
+    {
+      "type": "urltest",
+      "tag": "🇯🇵 日本",
+      "interrupt_exist_connections": true,
+      "outbounds": [
+        "日本1|AnyTLS[1x]",
+        "日本2|AnyTLS[1x]",
+        "日本3|AnyTLS[1x]",
+        "日本4|AnyTLS[1x]"
+      ],
+      "url": "https://cp.cloudflare.com/generate_204",
+      "interval": "1m",
+      "tolerance": 50
+    },
+    {
+      "type": "urltest",
+      "tag": "🇺🇸 美国",
+      "interrupt_exist_connections": true,
+      "outbounds": [
+        "美国1|AnyTLS[1x]",
+        "美国2|AnyTLS[1x]",
+        "美国3|AnyTLS[1x]",
+        "美国4|AnyTLS[1x]"
+      ],
+      "url": "https://cp.cloudflare.com/generate_204",
+      "interval": "1m",
+      "tolerance": 50
+    },
+    {
+      "type": "urltest",
+      "tag": "🇰🇷 韩国",
+      "interrupt_exist_connections": true,
+      "outbounds": [
+        "韩国1|AnyTLS[1x]",
+        "韩国2|AnyTLS[1x]",
+        "韩国3|AnyTLS[1x]",
+        "韩国4|AnyTLS[1x]"
+      ],
+      "url": "https://cp.cloudflare.com/generate_204",
+      "interval": "1m",
+      "tolerance": 50
+    },
+    {
+      "type": "urltest",
+      "tag": "🇻🇳 越南",
+      "interrupt_exist_connections": true,
+      "outbounds": [
+        "越南1|AnyTLS[1x]",
+        "越南2|AnyTLS[1x]",
+        "越南3|AnyTLS[1x]",
+        "越南4|AnyTLS[1x]"
+      ],
+      "url": "https://cp.cloudflare.com/generate_204",
+      "interval": "1m",
+      "tolerance": 50
+    },
+    {
+      "type": "urltest",
+      "tag": "🇹🇷 土耳其",
+      "interrupt_exist_connections": true,
+      "outbounds": [
+        "土耳其1|AnyTLS[1x]",
+        "土耳其2|AnyTLS[1x]",
+        "土耳其3|AnyTLS[1x]",
+        "土耳其4|AnyTLS[1x]"
+      ],
+      "url": "https://cp.cloudflare.com/generate_204",
+      "interval": "1m",
+      "tolerance": 50
+    },
+    {
+      "type": "urltest",
+      "tag": "🇫🇷 法国",
+      "interrupt_exist_connections": true,
+      "outbounds": [
+        "法国1|AnyTLS[1x]",
+        "法国2|AnyTLS[1x]",
+        "法国3|AnyTLS[1x]",
+        "法国4|AnyTLS[1x]"
+      ],
+      "url": "https://cp.cloudflare.com/generate_204",
+      "interval": "1m",
+      "tolerance": 50
+    },
+    {
+      "type": "urltest",
+      "tag": "🇩🇪 德国",
+      "interrupt_exist_connections": true,
+      "outbounds": [
+        "德国1|AnyTLS[1x]",
+        "德国2|AnyTLS[1x]",
+        "德国3|AnyTLS[1x]",
+        "德国4|AnyTLS[1x]"
+      ],
+      "url": "https://cp.cloudflare.com/generate_204",
+      "interval": "1m",
+      "tolerance": 50
+    },
+    {
+      "type": "urltest",
+      "tag": "🇬🇧 英国",
+      "interrupt_exist_connections": true,
+      "outbounds": [
+        "英国1|AnyTLS[1x]",
+        "英国2|AnyTLS[1x]",
+        "英国3|AnyTLS[1x]",
+        "英国4|AnyTLS[1x]"
+      ],
+      "url": "https://cp.cloudflare.com/generate_204",
+      "interval": "1m",
+      "tolerance": 50
+    },
+    {
+      "type": "urltest",
+      "tag": "🇹🇭 泰国",
+      "interrupt_exist_connections": true,
+      "outbounds": [
+        "泰国1|AnyTLS[1x]",
+        "泰国2|AnyTLS[1x]",
+        "泰国3|AnyTLS[1x]",
+        "泰国4|AnyTLS[1x]"
+      ],
+      "url": "https://cp.cloudflare.com/generate_204",
+      "interval": "1m",
+      "tolerance": 50
+    },
+    {
+      "type": "urltest",
+      "tag": "🚀 Google",
+      "interrupt_exist_connections": true,
+      "outbounds": [
+        "香港1|AnyTLS[1x]",
+        "香港2|AnyTLS[1x]",
+        "香港3|AnyTLS[1x]",
+        "香港4|AnyTLS[1x]",
+        "新加坡1|AnyTLS[1x]",
+        "新加坡2|AnyTLS[1x]",
+        "新加坡3|AnyTLS[1x]",
+        "新加坡4|AnyTLS[1x]",
+        "日本1|AnyTLS[1x]",
+        "日本2|AnyTLS[1x]",
+        "日本3|AnyTLS[1x]",
+        "日本4|AnyTLS[1x]",
+        "美国1|AnyTLS[1x]",
+        "美国2|AnyTLS[1x]",
+        "美国3|AnyTLS[1x]",
+        "美国4|AnyTLS[1x]",
+        "韩国1|AnyTLS[1x]",
+        "韩国2|AnyTLS[1x]",
+        "韩国3|AnyTLS[1x]",
+        "韩国4|AnyTLS[1x]",
+        "越南1|AnyTLS[1x]",
+        "越南2|AnyTLS[1x]",
+        "越南3|AnyTLS[1x]",
+        "越南4|AnyTLS[1x]",
+        "土耳其1|AnyTLS[1x]",
+        "土耳其2|AnyTLS[1x]",
+        "土耳其3|AnyTLS[1x]",
+        "土耳其4|AnyTLS[1x]",
+        "法国1|AnyTLS[1x]",
+        "法国2|AnyTLS[1x]",
+        "法国3|AnyTLS[1x]",
+        "法国4|AnyTLS[1x]",
+        "德国1|AnyTLS[1x]",
+        "德国2|AnyTLS[1x]",
+        "德国3|AnyTLS[1x]",
+        "德国4|AnyTLS[1x]",
+        "英国1|AnyTLS[1x]",
+        "英国2|AnyTLS[1x]",
+        "英国3|AnyTLS[1x]",
+        "英国4|AnyTLS[1x]",
+        "泰国1|AnyTLS[1x]",
+        "泰国2|AnyTLS[1x]",
+        "泰国3|AnyTLS[1x]",
+        "泰国4|AnyTLS[1x]"
+      ],
+      "url": "https://www.gstatic.com/generate_204",
+      "interval": "1m",
+      "tolerance": 50
+    },
+    {
+      "type": "urltest",
+      "tag": "🚀 Cloudflare",
+      "interrupt_exist_connections": true,
+      "outbounds": [
+        "香港1|AnyTLS[1x]",
+        "香港2|AnyTLS[1x]",
+        "香港3|AnyTLS[1x]",
+        "香港4|AnyTLS[1x]",
+        "新加坡1|AnyTLS[1x]",
+        "新加坡2|AnyTLS[1x]",
+        "新加坡3|AnyTLS[1x]",
+        "新加坡4|AnyTLS[1x]",
+        "日本1|AnyTLS[1x]",
+        "日本2|AnyTLS[1x]",
+        "日本3|AnyTLS[1x]",
+        "日本4|AnyTLS[1x]",
+        "美国1|AnyTLS[1x]",
+        "美国2|AnyTLS[1x]",
+        "美国3|AnyTLS[1x]",
+        "美国4|AnyTLS[1x]",
+        "韩国1|AnyTLS[1x]",
+        "韩国2|AnyTLS[1x]",
+        "韩国3|AnyTLS[1x]",
+        "韩国4|AnyTLS[1x]",
+        "越南1|AnyTLS[1x]",
+        "越南2|AnyTLS[1x]",
+        "越南3|AnyTLS[1x]",
+        "越南4|AnyTLS[1x]",
+        "土耳其1|AnyTLS[1x]",
+        "土耳其2|AnyTLS[1x]",
+        "土耳其3|AnyTLS[1x]",
+        "土耳其4|AnyTLS[1x]",
+        "法国1|AnyTLS[1x]",
+        "法国2|AnyTLS[1x]",
+        "法国3|AnyTLS[1x]",
+        "法国4|AnyTLS[1x]",
+        "德国1|AnyTLS[1x]",
+        "德国2|AnyTLS[1x]",
+        "德国3|AnyTLS[1x]",
+        "德国4|AnyTLS[1x]",
+        "英国1|AnyTLS[1x]",
+        "英国2|AnyTLS[1x]",
+        "英国3|AnyTLS[1x]",
+        "英国4|AnyTLS[1x]",
+        "泰国1|AnyTLS[1x]",
+        "泰国2|AnyTLS[1x]",
+        "泰国3|AnyTLS[1x]",
+        "泰国4|AnyTLS[1x]"
+      ],
+      "url": "https://cp.cloudflare.com/generate_204",
+      "interval": "1m",
+      "tolerance": 50
+    },
+    {
+      "type": "direct",
+      "tag": "direct"
+    },
+    {
+      "type": "block",
+      "tag": "block"
+    }
+  ],
+  "route": {
+    "default_domain_resolver": "dns-resolver",
+    "default_mark": 1234,
+    "default_http_client": "ruleset-dl",
+    "rules": [
+      {
+        "ip_cidr": [
+          "223.5.5.5/32"
+        ],
+        "action": "route",
+        "outbound": "direct"
+      },
+      {
+        "action": "sniff"
+      },
+      {
+        "ip_is_private": true,
+        "action": "route",
+        "outbound": "direct"
+      },
+      {
+        "clash_mode": "direct",
+        "action": "route",
+        "outbound": "direct"
+      },
+      {
+        "domain_suffix": [
+          "bilibili.com",
+          "bilibili.tv",
+          "bilicdn.com"
+        ],
+        "action": "route",
+        "outbound": "direct"
+      },
+      {
+        "domain_suffix": [
+          "edu.cn"
+        ],
+        "action": "route",
+        "outbound": "🎯 Direct"
+      },
+      {
+        "domain_suffix": [
+          "gstatic.com"
+        ],
+        "action": "route",
+        "outbound": "🚀 Google"
+      },
+      {
+        "domain_suffix": [
+          "github.com",
+          "githubusercontent.com"
+        ],
+        "action": "route",
+        "outbound": "🚀 Cloudflare"
+      },
+      {
+        "domain_suffix": [
+          "fedoraforum.org",
+          "fedorainfracloud.org",
+          "fedoramagazine.org",
+          "fedorapeople.org",
+          "fedoraproject.org",
+          "getfedora.org"
+        ],
+        "action": "route",
+        "outbound": "🚀 Cloudflare"
+      },
+      {
+        "rule_set": [
+          "meta"
+        ],
+        "action": "route",
+        "outbound": "🇯🇵 日本"
+      },
+      {
+        "domain": [
+          "meta.ai"
+        ],
+        "action": "route",
+        "outbound": "🇯🇵 日本"
+      },
+      {
+        "rule_set": [
+          "bilibili",
+          "bilibili2",
+          "bilibili-cdn"
+        ],
+        "action": "route",
+        "outbound": "direct"
+      },
+      {
+        "rule_set": [
+          "tencent",
+          "aliyun",
+          "tencent-games",
+          "category-education-cn",
+          "volcengine"
+        ],
+        "action": "route",
+        "outbound": "🎯 Direct"
+      },
+      {
+        "rule_set": [
+          "google",
+          "youtube",
+          "google-deepmind",
+          "google-gemini",
+          "googlefcm",
+          "android"
+        ],
+        "action": "route",
+        "outbound": "🚀 Google"
+      },
+      {
+        "rule_set": [
+          "Openai"
+        ],
+        "action": "route",
+        "outbound": "🚀 Google"
+      },
+      {
+        "rule_set": [
+          "Github"
+        ],
+        "action": "route",
+        "outbound": "🚀 Cloudflare"
+      },
+      {
+        "rule_set": [
+          "CN"
+        ],
+        "action": "route",
+        "outbound": "🎯 Direct"
+      }
+    ],
+    "rule_set": [
+      {
+        "type": "remote",
+        "tag": "volcengine",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-volcengine.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "meta",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-meta.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "bilibili",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-bilibili.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "bilibili2",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-bilibili2.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "bilibili-cdn",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-bilibili-cdn.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "tencent",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-tencent.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "aliyun",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-aliyun.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "tencent-games",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-tencent-games.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "category-education-cn",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-category-education-cn.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "CN",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-cn.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "Github",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-github.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "google-gemini",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-google-gemini.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "Openai",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-openai.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "google",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-google.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "youtube",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-youtube.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "google-scholar",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-google-scholar.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "google-deepmind",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-google-deepmind.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "googlefcm",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-googlefcm.srs"
+      },
+      {
+        "type": "remote",
+        "tag": "android",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-android.srs"
+      }
+    ],
+    "final": "🚀 Cloudflare",
+    "auto_detect_interface": true
+  },
+  "services": [
+    {
+      "type": "api",
+      "listen": "0.0.0.0",
+      "listen_port": 9091,
+      "dashboard": {
+        "enabled": true
+      }
+    }
+  ],
+  "experimental": {
+    "cache_file": {
+      "enabled": true,
+      "path": "cache.db",
+      "store_dns": true
+    }
+  }
+}

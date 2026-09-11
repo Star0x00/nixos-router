@@ -8,8 +8,12 @@ deploy:
 switch:
 	sudo nixos-rebuild switch --flake ~/nixos-router#router
 
-# 构建本地 CI runner 镜像并载入路由器 podman(不推 registry)
-# 换 base 镜像报 hash mismatch 时, 把报错里 “got: sha256-...” 填进 pkgs/ci-runner.nix 的 outputHash 再跑
-ci-runner:
-	nix build .#ciRunner
-	sudo podman load -i result
+# 重新生成 sing-box A/B 的 base 模板(地区节点组),需 SubStore 在跑
+# URL 即 sing-box.nix 里 instances.<x>.nodeUrl,换订阅时两边一起改
+gen-bases: gen-a-base gen-b-base
+
+gen-a-base:
+	node hosts/router/assets/gen-singbox-base.mjs 'http://127.0.0.1:3001/qwerhyy123/download/collection/singbox?target=sing-box' hosts/router/assets/singbox-a-base.json
+
+gen-b-base:
+	node hosts/router/assets/gen-singbox-base.mjs 'http://10.10.10.1:3001/qwerhyy123/download/jiuxiang?target=sing-box' hosts/router/assets/singbox-b-base.json

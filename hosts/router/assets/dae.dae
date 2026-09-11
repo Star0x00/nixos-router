@@ -23,7 +23,10 @@ global {
 }
 
 node {
-    'socks5://127.0.0.1:2080'
+    # sing-box A：本机流量（dae local_flow / fallback）
+    sb_a: 'socks5://127.0.0.1:2080'
+    # sing-box B：LAN 设备流量（dae lan_flow）
+    sb_b: 'socks5://127.0.0.1:2081'
 }
 
 dns {
@@ -52,7 +55,14 @@ dns {
   }
 }
 group {
-    proxy {
+    # 本机流量 → sing-box A
+    local_flow {
+        filter: name(sb_a)
+        policy: fixed(0)
+    }
+    # LAN 设备流量 → sing-box B
+    lan_flow {
+        filter: name(sb_b)
         policy: fixed(0)
     }
 }
@@ -105,23 +115,32 @@ routing {
     domain(geosite:category-ai-cn) -> direct
     domain(geosite:category-ntp-cn) -> direct
 
-    # ── 代理：非中国互联网服务 ──
-    domain(geosite:category-ai-!cn) -> proxy
-    domain(geosite:category-ai-chat-!cn) -> proxy
-    domain(geosite:category-social-media-!cn) -> proxy
-    domain(geosite:category-media) -> proxy
-    domain(geosite:category-communication) -> proxy
-    domain(geosite:category-container) -> proxy
-    domain(geosite:category-dev) -> proxy
-    domain(geosite:category-games-!cn) -> proxy
-    domain(geosite:category-cryptocurrency) -> proxy
-    domain(geosite:category-entertainment) -> proxy
-    domain(geosite:category-anticensorship) -> proxy
-    domain(geosite:category-scholar-!cn) -> proxy
-    domain(geosite:category-browser-!cn) -> proxy
-    domain(geosite:category-remote-control) -> proxy
-    domain(geosite:category-proxy-tunnels) -> proxy
-    domain(geosite:category-pt) -> proxy
+    # ── 代理：非中国互联网服务（按来源分流到两个 sing-box） ──
+    # 已知“该走代理”的域名优先于下面的 geoip:cn 直连判断
+    # LAN 设备 → sing-box B
+    domain(geosite:category-ai-!cn, geosite:category-ai-chat-!cn,
+           geosite:category-social-media-!cn, geosite:category-media,
+           geosite:category-communication, geosite:category-container,
+           geosite:category-dev, geosite:category-games-!cn,
+           geosite:category-cryptocurrency, geosite:category-entertainment,
+           geosite:category-anticensorship, geosite:category-scholar-!cn,
+           geosite:category-browser-!cn, geosite:category-remote-control,
+           geosite:category-proxy-tunnels, geosite:category-pt) &&
+        sip(10.10.10.0/24) -> lan_flow
+    # 其余来源（本机）→ sing-box A
+    domain(geosite:category-ai-!cn, geosite:category-ai-chat-!cn,
+           geosite:category-social-media-!cn, geosite:category-media,
+           geosite:category-communication, geosite:category-container,
+           geosite:category-dev, geosite:category-games-!cn,
+           geosite:category-cryptocurrency, geosite:category-entertainment,
+           geosite:category-anticensorship, geosite:category-scholar-!cn,
+           geosite:category-browser-!cn, geosite:category-remote-control,
+           geosite:category-proxy-tunnels, geosite:category-pt) -> local_flow
+
+    # ── Fedora 相关站点走代理（geosite:fedora，按来源分流） ──
+    domain(geosite:fedora) && sip(10.10.10.0/24) -> lan_flow
+    domain(geosite:fedora) -> local_flow
+
     domain(geosite:category-porn) -> block
 
         # ── 按 IP 直连 ──
@@ -135,6 +154,9 @@ routing {
     # ── UDP 全部直连（SOCKS5 接不住 UDP，且大部分 UDP 不需要代理） ──
     l4proto(udp) -> direct
 
-    # ── 其余 TCP 走代理 ──
-    fallback: proxy
+    # ── 其余 TCP 走代理（按来源分流） ──
+    # LAN 设备（NAT 前的源 IP 10.10.10.x）→ sing-box B
+    sip(10.10.10.0/24) -> lan_flow
+    # 其余（本机进程，出站源为 WAN 地址）→ sing-box A
+    fallback: local_flow
 }

@@ -1,26 +1,28 @@
-# Forgejo Actions runner(经 podman 跑 job, 不引入 docker)。启用步骤见本目录 README.md。
-{ pkgs, ... }:
+# Forgejo Actions runner(host 模式: job 直接在路由器上执行, 直接用宿主 podman build/push)。
+# 不再用 job 容器镜像; 工作链由模块的 hostPackages 提供(见下)。启用步骤见本目录 README.md。
+{ pkgs, lib, ... }:
 let
   net = import ../../net.nix;
 in
 {
-  # runner 走 Docker 客户端默认 socket 连 podman(docker-compat API)
-  virtualisation.podman.dockerSocket.enable = true;
+  # podman push 到 http://10.10.10.1:3000 需放行 insecure(宿主 rootful podman 直接用这份 registries.conf)
+  virtualisation.containers.registries.settings = {
+    registry = [
+      { location = "docker.io"; }
+      { location = "quay.io"; }
+      { location = "10.10.10.1:3000"; insecure = true; }
+    ];
+  };
 
   services.forgejo-runner = {
     package = pkgs.forgejo-runner;
     instances.forgejo = {
       enable = true;                 # 填好 uuid + 写好 token 后再置 true
       settings = {
-        # 容器 job 共享宿主网络, 流量即本机进程 → dae 域名级分流/代理全生效(否则只按 IP geo 分流)
-        container.network = "host";
-        # 标签名 = workflow 的 runs-on
+        # label 名 = workflow 的 runs-on; `:host` 表示 job 直接在宿主执行。
+        # 宿主网络即本机进程 → dae 域名级分流/代理全生效(无需额外挂 socket)。
         runner.labels = [
-          # 自建本地镜像(ubuntu 24.04 + node/git/kaniko/skopeo), 定义见 pkgs/ci-runner.nix。
-          # podman load 会把镜像名规范为 localhost/ci-runner, 这里必须带 localhost/ 前缀才能命中本地镜像。
-          # 改镜像后: just ci-runner(构建 + podman load), 并同步这里的 tag。
-          "ubuntu-latest:docker://localhost/ci-runner:24.04"
-          # "nix:host"                  # 直接在主机跑 nix, 无需镜像
+          "nixos:host"
         ];
         # 新版 runner 用 uuid + token 一对连接(旧 Registration Token 已废弃)
         server.connections.forgejo = {
@@ -30,6 +32,31 @@ in
       };
       # token 从文件经 systemd LoadCredential 读, 不明文进 nix store
       secrets.server.connections.forgejo.token_url = "/etc/forgejo-runner/token";
+
+      # host 模式 job 的 PATH = 这里 + gitMinimal。
+      # workflow 里直接 `podman build` / `podman push` / `skopeo` / `git` / node(JS action) 等。
+      hostPackages = with pkgs; [
+        podman            # 宿主 rootful podman(buildah 构建: 无 BuildKit/嵌套 overlay 问题, 产物与缓存都在宿主)
+        git
+        jq
+        openssh
+        skopeo
+        bash
+        coreutils
+        curl
+        wget
+        gawk
+        gnused
+        nodejs            # actions/checkout 等 JS action 需要
+      ];
     };
+  };
+
+  # host 模式 job 要以 root 操作宿主 podman, 覆盖模块给 runner 服务的 DynamicUser。
+  # ⚠️ 等价于任意 workflow 都能 root 操作整台路由器, 只对可信仓库开 host label。
+  systemd.services.forgejo-runner-forgejo.serviceConfig = {
+    DynamicUser = lib.mkForce false;
+    User = "root";
+    Group = "root";
   };
 }

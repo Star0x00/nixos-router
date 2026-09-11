@@ -56,7 +56,9 @@ in
   };
 
   # 等 LAN 网卡就绪再启动
-  systemd.services.kea-dhcp4 = {
+  # 注意: NixOS kea 模块生成的服务单元是 kea-dhcp4-server.service,
+  # 写成 kea-dhcp4 会凭空造出一个无 ExecStart 的坏单元(bad-setting)。
+  systemd.services.kea-dhcp4-server = {
     after = [ net.lanDevice "network-online.target" ];
     wants = [ net.lanDevice "network-online.target" ];
   };
