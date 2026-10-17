@@ -48,10 +48,11 @@ adds that path to `AuthorizedKeysFile`, because Fedora's default only looks at
 
 ```sh
 ssh root@10.10.10.1          # key from that file
-
-router-adduser cyrene        # useradd -m -G wheel, reuses the root SSH key
 passwd root                  # optional: needed for console/TTY login
 ```
+
+Extra accounts are not created by the image. Add them manually once, e.g.
+`useradd -m -G wheel -s /bin/bash cyrene` plus `passwd cyrene`.
 
 Without `passwd root`, the physical console has no way in (root is locked, no
 key path applies to a TTY). Set it once over SSH if you want a console fallback.

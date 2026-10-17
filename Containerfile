@@ -51,10 +51,9 @@ RUN echo 'router' > /etc/hostname \
     && ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
     && printf 'LANG=en_US.UTF-8\n' > /etc/locale.conf
 
-# No accounts are created here on purpose. Log in as root with the key from
-# /etc/ssh/authorized_keys/root, then run `router-adduser <name>` once.
-# /home is a symlink to /var/home on bootc, so accounts survive upgrades.
-RUN install -m 0755 /usr/share/router/bin/router-adduser /usr/bin/router-adduser
+# No accounts are created here on purpose: the only login is root via the key in
+# /etc/ssh/authorized_keys/root. Extra accounts are created manually on the
+# running system (they land in /etc + /var/home, which survive upgrades).
 
 # ── initramfs (r8152 must be present in the initrd) ──
 # Rerun this step after touching /usr/lib/dracut/dracut.conf.d.
