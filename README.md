@@ -18,20 +18,17 @@ Fedora bootc 自定义 OCI 系统镜像，替换原 NixOS 路由器。
 ```
 Containerfile               # 阶段 2+ 逐步补全
 rootfs/                     # 原样 COPY 到镜像 / 的文件树（静态配置优先进 /usr）
-  usr/share/router/         # 本方案的配置源（nftables/kea/dae/sysctl/modprobe/udev）
-  usr/lib/systemd/system/   # 需要覆盖或新增的 unit
-  usr/share/containers/systemd/  # quadlet（sub-store / openlist / memos）
-stages/                     # 每个阶段的验证脚本 / 说明
+  usr/share/router/         # nftables 等配置源
+  usr/lib/systemd/system/   # unit drop-in
+stages/                     # 每阶段的说明与验证步骤
 archive/                    # 原 NixOS 仓库（只读参考，不再构建）
 ```
 
 ## 阶段
 
 - **阶段 1** 仓库重整：NixOS 全部移入 `archive/`。✅
-- **阶段 2** 骨架镜像：FROM fedora-bootc:43 + 基础包 + 静态配置（sysctl/modprobe/udev/networkd/nftables/sshd），`bootc container lint` 通过。
-- **阶段 3** 服务落地：kea（DHCP）、dae（eBPF 代理）、quadlet 容器（sub-store/openlist）、memos、forgejo + runner。
-- **阶段 4** 数据与安装：btrfs 布局、`bootc install to-disk`、`/var/lib/*` 数据迁移、切换启动项。
-- **阶段 5** 运维：registry 推送、`bootc upgrade`/rollback、备份快照。
+- **阶段 2** 骨架镜像：FROM fedora-bootc:43 + 基础包 + 静态配置（networkd/nftables/sshd/sysctl/modprobe/udev/initramfs），`bootc container lint` 通过。
+- **阶段 3+** 服务逐个加：DHCP → 代理 → 容器 → 代码托管，每个单独验证。
 
 ## 构建 / 检查
 
@@ -45,8 +42,7 @@ just iso dev          # 出 anaconda-iso 到 ./output
 
 ## 状态
 
-阶段 1（仓库重整）已完成，阶段 2/3 的 Containerfile 与配置已写好，**尚未构建验证**。
-逐段验证步骤见 `stages/`。
+阶段 1 完成；阶段 2 骨架配置已写好，**尚未构建验证**。验证步骤见 `stages/02-skeleton.md`。
 
 ## 注意
 
