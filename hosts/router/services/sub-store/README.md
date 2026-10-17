@@ -2,7 +2,7 @@
 
 podman 容器运行, 数据在 `/var/lib/sub-store`。
 - **访问**: `http://10.10.10.1:3001/<backendPath>/api/utils/env`
-- **作用**: 上游节点管理; 本机 `sing-box-update` 每天 7 点从这里拉节点配置并重启 sing-box
+- **作用**: 上游节点管理; dae 启动时从这里拉订阅(`?target=V2Ray`)作为节点池
 
 ## 常用环境变量(容器内, 对应 docker run -e)
 | 变量 | 说明 |

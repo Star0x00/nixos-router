@@ -13,10 +13,11 @@ hosts/router/
 ├── boot.nix                    # bootloader、内核参数、udev
 ├── network.nix                 # networkd (WAN/LAN + NAT) + nftables 防火墙
 ├── net.nix                     # 共享常量（IP、网卡、用户名、SSH key）
-├── assets/                     # dae / sing-box 配置文件
+├── assets/                     # 配置
+│   ├── dae/                    # dae 配置（入口 config.dae + config.d/ 分片）
+│   └── singbox-*.json          # 旧 sing-box base（已废弃，仅参考）
 └── services/
     ├── kea.nix                 # DHCP4（替代 AdGuardHome 的 DHCP）
-    ├── sing-box.nix            # SOCKS5 代理（dae 的出站）
     ├── dae.nix                 # eBPF 透明代理 / 分流 / DNS 拦截
     ├── sub-store/              # 订阅管理（podman 容器）
     │   ├── container.nix
@@ -29,7 +30,8 @@ hosts/router/
     │   ├── actions.nix
     │   └── README.md           # 访问地址 / 首次部署 / 启用 Actions
     └── deprecated/             # 被取代的旧方案（不导入）
-        └── adguardhome.nix     #   旧 AGH 方案（kea+dae 取代）
+        ├── adguardhome.nix     #   旧 AGH 方案（kea+dae 取代）
+        └── sing-box.nix        #   旧 sing-box A/B（dae 直连订阅取代）
 ```
 
 各服务子目录里的 `README.md` 记录该服务的访问地址与部署/启用要点
@@ -38,7 +40,7 @@ hosts/router/
 ## 架构
 
 - **DHCP**：Kea DHCP4，下发网关/DNS 均为 `10.10.10.1`
-- **透明代理**：dae (eBPF) 拦截流量 + DNS, 直连接入 sing-box (SOCKS5)
+- **透明代理**：dae (eBPF) 拦截流量 + DNS, 直接从 Sub-Store 订阅取节点池(无 sing-box); 配置入口 `assets/dae/config.dae`, 规则拆在 `assets/dae/config.d/`
 - **DNS**：由 dae 的 DNS 路由处理（广告拦截、污染重查）
 - **防火墙**：nftables，仅放行 established + LAN（见 `network.nix`）
 - **订阅**：Sub-Store（podman 容器）

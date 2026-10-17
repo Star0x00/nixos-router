@@ -69,6 +69,14 @@ in
     wants = [ "network-online.target" ];
   };
 
+  # 定期 GC /nix store。注意：这不会清 /boot，/boot 由
+  # boot.loader.systemd-boot.configurationLimit 控制。
+  nix.gc = {
+    automatic = true;
+    dates = "weekly";
+    options = "--delete-older-than 14d";
+  };
+
   nix.settings = {
     experimental-features = [
       "nix-command"

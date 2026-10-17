@@ -8,8 +8,9 @@ deploy:
 switch:
 	sudo nixos-rebuild switch --flake ~/nixos-router#router
 
-# 重新生成 sing-box A/B 的 base 模板(地区节点组),需 SubStore 在跑
-# URL 即 sing-box.nix 里 instances.<x>.nodeUrl,换订阅时两边一起改
+# [已废弃] 重新生成 sing-box A/B 的 base 模板(地区节点组), 需 SubStore 在跑
+# URL 即 services/deprecated/sing-box.nix 里 instances.<x>.nodeUrl, 换订阅时两边一起改
+# (dae 已改为直接拉 SubStore 的 ?target=V2Ray 订阅, 不再需要这两个 base)
 gen-bases: gen-a-base gen-b-base
 
 gen-a-base:

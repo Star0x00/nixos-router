@@ -6,6 +6,9 @@ _:
     loader = {
       systemd-boot.enable = true;
       efi.canTouchEfiVariables = true;
+      # 限制 /boot 里保留的启动项数量；不设则默认 null = 全部保留，
+      # 会撑爆 1GB 的 vfat /boot。每代约 13M kernel + 44M initrd。
+      systemd-boot.configurationLimit = 8;
     };
     blacklistedKernelModules = [ "r8153_ecm" ];
 

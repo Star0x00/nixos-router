@@ -1,4 +1,9 @@
-# sing-box: SOCKS5 proxy providers for dae.
+# sing-box: SOCKS5 proxy providers for dae. —— 已废弃, 不再导入。
+#
+# dae 现在直接使用 Sub-Store 订阅作为节点池, 不再需要 sing-box 这一层。
+# 保留仅供参考; 要重新启用需把本文件加回 services/default.nix 的 imports,
+# 并把 dae 配置改回走 socks5://127.0.0.1:2080 / 2081。
+#
 # dae performs eBPF-based transparent proxying and traffic splitting;
 # sing-box only handles outbound proxy connections.
 #
@@ -14,13 +19,13 @@ let
 
   # 各实例差异项。nodeUrl = SubStore 的 collection 下载地址。
   # 换订阅时: 改这里 + 跑 `just gen-bases` 更新仓库里的 base 模板。
-  genScript = ../assets/gen-singbox-base.mjs;
+  genScript = ../../assets/gen-singbox-base.mjs;
   instances = {
     a = {
       # 现用订阅,给本机流量
       nodeUrl = "http://127.0.0.1:3001/qwerhyy123/download/collection/singbox?target=sing-box";
       generate = true;
-      baseTemplate = ../assets/singbox-a-base.json;
+      baseTemplate = ../../assets/singbox-a-base.json;
     };
     b = {
       # 现用订阅,给 LAN 设备流量。
@@ -28,7 +33,7 @@ let
       # 所以 base.json 是运行时文件, 不再由 environment.etc 建只读软链。
       nodeUrl = "http://10.10.10.1:3001/qwerhyy123/download/jiuxiang?target=sing-box";
       generate = true;
-      baseTemplate = ../assets/singbox-b-base.json;
+      baseTemplate = ../../assets/singbox-b-base.json;
     };
   };
 
