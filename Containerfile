@@ -1,12 +1,12 @@
-# fedora-bootc-router — 骨架镜像
+# fedora-bootc-router — skeleton image
 #
-# 范围：可安装、可启动、能 DHCP、能 SSH、能转发。
-# 不含 kea / dae / forgejo / 任何容器。服务后续逐个加。
+# Scope: installable, bootable, DHCP, SSH, forwarding.
+# No kea / dae / forgejo / containers yet. Services are added one at a time.
 #
-# 规则：静态配置进 /usr，机器本地状态才进 /etc。
+# Rule: static config goes in /usr; only machine-local state belongs in /etc.
 FROM quay.io/fedora/fedora-bootc:44
 
-# ── 基础包 ──
+# ── base packages ──
 RUN dnf -y install --setopt=install_weak_deps=False \
         systemd-networkd \
         nftables \
@@ -17,10 +17,10 @@ RUN dnf -y install --setopt=install_weak_deps=False \
     && dnf clean all \
     && rm -rf /var/cache/dnf /var/cache/libdnf5
 
-# ── 静态配置 ──
+# ── static config ──
 COPY rootfs/ /
 
-# ── enable / mask（bootc 里不能 start，只能 enable / mask）──
+# ── enable / mask (bootc cannot start units at build time) ──
 RUN systemctl mask \
         NetworkManager.service \
         NetworkManager-wait-online.service \
@@ -32,7 +32,7 @@ RUN systemctl mask \
         sshd.service \
         nftables.service
 
-# ── 机器身份 ──
+# ── machine identity ──
 RUN echo 'router' > /etc/hostname \
     && ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
     && printf 'LANG=en_US.UTF-8\n' > /etc/locale.conf
@@ -43,11 +43,11 @@ RUN useradd -m -G wheel -s /bin/bash cyrene \
     && chown cyrene:cyrene /home/cyrene/.ssh/authorized_keys \
     && chmod 0600 /home/cyrene/.ssh/authorized_keys
 
-# ── initramfs（r8152 必须在 initrd 里）──
-# 改动 /usr/lib/dracut/dracut.conf.d 后必须重跑这一步。
+# ── initramfs (r8152 must be present in the initrd) ──
+# Rerun this step after touching /usr/lib/dracut/dracut.conf.d.
 RUN set -eux; \
     kver=$(ls /usr/lib/modules); \
     DRACUT_NO_XATTR=1 dracut -vf "/usr/lib/modules/${kver}/initramfs.img" "${kver}"
 
-# ── 结构校验 ──
+# ── structural validation ──
 RUN bootc container lint

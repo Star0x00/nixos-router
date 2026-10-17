@@ -1,56 +1,61 @@
 # fedora-bootc-router
 
-Fedora bootc 自定义 OCI 系统镜像，替换原 NixOS 路由器。
-旧的 NixOS 配置原样保留在 `archive/`（未删除、未导入）。
+Custom Fedora bootc OCI image replacing the previous NixOS router.
+The old NixOS configuration is kept untouched under `archive/`.
 
-## 目标主机（与原配置一致）
+## Target host (unchanged from the NixOS setup)
 
-| 项 | 值 |
+| Item | Value |
 |---|---|
-| WAN | `eno1`，DHCP |
-| LAN | `enp0s20f0u1`（USB RTL8153），`10.10.10.1/24` |
-| 主机名 | `router` |
-| root SSH | 见 `rootfs/etc/ssh/authorized_keys/root` |
-| 系统 | `quay.io/fedora/fedora-bootc:44` 派生 |
+| WAN | `eno1`, DHCP |
+| LAN | `enp0s20f0u1` (USB RTL8153), `10.10.10.1/24` |
+| Hostname | `router` |
+| Root SSH | see `rootfs/etc/ssh/authorized_keys/root` |
+| Base image | derived from `quay.io/fedora/fedora-bootc:44` |
 
-## 目录
+## Layout
 
 ```
-Containerfile               # 骨架镜像（阶段 2）
-.github/workflows/build.yml # CI：构建 + lint + 推送 GHCR
-rootfs/                     # 原样 COPY 到镜像 / 的文件树（静态配置优先进 /usr）
-  usr/share/router/         # nftables 等配置源
-  usr/lib/systemd/system/   # unit drop-in
-archive/                    # 原 NixOS 仓库（只读参考，不再构建）
+Containerfile               # skeleton image (stage 2)
+.github/workflows/build.yml # CI: build + lint + push to GHCR
+rootfs/                     # copied verbatim onto / (static config prefers /usr)
+  usr/share/router/         # nftables and other config sources
+  usr/lib/systemd/system/   # unit drop-ins
+archive/                    # previous NixOS repo (reference only, not built)
 ```
 
-## 阶段
+## Stages
 
-- **阶段 1** 仓库重整：NixOS 全部移入 `archive/`。✅
-- **阶段 2** 骨架镜像：FROM fedora-bootc:44 + 基础包 + 静态配置（networkd/nftables/sshd/sysctl/modprobe/udev/initramfs），`bootc container lint` 通过。
-- **阶段 3+** 服务逐个加：DHCP → 代理 → 容器 → 代码托管，每个单独验证。
+- **Stage 1** Repo reshuffle: all NixOS config moved into `archive/`. Done.
+- **Stage 2** Skeleton image: FROM fedora-bootc:44 + base packages + static config
+  (networkd/nftables/sshd/sysctl/modprobe/udev/initramfs), passes `bootc container lint`.
+- **Stage 3+** Add services one at a time: DHCP, proxy, containers, code hosting,
+  each validated on its own.
 
-## 构建
+## Building
 
-本地：
+Locally:
 
 ```sh
 just build            # podman build -t localhost/router-bootc:dev .
 ```
 
-CI（GitHub Actions，`.github/workflows/build.yml`）：
+CI (GitHub Actions, `.github/workflows/build.yml`):
 
-- push 到 `main` → 构建 + `bootc container lint` + 推送 `ghcr.io/<owner>/<repo>:latest` 和 `:sha-<12位>`
-- PR → 只构建 + lint，不推送
-- 每周一 03:00 UTC 自动重建，跟进 `fedora-bootc:44` 更新
-- `archive/**` 与 `*.md` 的改动不触发构建
+- push to `main` -> build + `bootc container lint` + push `ghcr.io/<owner>/<repo>:latest`
+  and `:sha-<12 chars>`
+- pull request -> build + lint only, no push
+- weekly rebuild on Monday 03:00 UTC to track `fedora-bootc:44`
+- changes under `archive/**` and `*.md` do not trigger a build
 
-## 状态
+## Status
 
-阶段 1 完成；阶段 2 骨架配置已写好，**尚未构建验证**。
+Stage 1 done. Stage 2 skeleton config is written but **not yet build-verified**.
 
-## 注意
+## Notes
 
-- 静态配置放 `/usr`，机器本地状态才放 `/etc`（bootc 升级时 `/etc` 是 3-way merge）。
-- initramfs 在构建期生成，改了 dracut 配置必须重跑 `dracut`。
-- Fedora 默认 NetworkManager/firewalld，全部 mask，改用 systemd-networkd + nftables。
+- Static config lives in `/usr`; only machine-local state belongs in `/etc`
+  (bootc does a 3-way merge for `/etc` on upgrades).
+- The initramfs is generated at build time; rerun `dracut` after touching its config.
+- Fedora defaults to NetworkManager/firewalld here; both are masked in favour of
+  systemd-networkd + nftables.

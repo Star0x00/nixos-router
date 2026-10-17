@@ -7,7 +7,7 @@ on:
   pull_request:
   workflow_dispatch:
   schedule:
-    # 每周一 03:00 UTC 用最新基础镜像重建，跟进 fedora-bootc 更新
+    # Rebuild weekly against the latest base image to track fedora-bootc updates
     - cron: '0 3 * * 1'
 
 env:
@@ -27,14 +27,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Podman 版本
+      - name: Show podman version
         run: podman --version
 
-      - name: 登录 GHCR
+      - name: Log in to GHCR
         if: github.event_name != 'pull_request'
         run: echo "${{ secrets.GITHUB_TOKEN }}" | podman login ghcr.io -u "${{ github.actor }}" --password-stdin
 
-      - name: 构建
+      - name: Build image
         run: |
           podman build \
             --pull=always \
@@ -43,24 +43,24 @@ jobs:
             -t "$IMAGE:latest" \
             .
 
-      - name: 结构检查
+      - name: Lint image
         run: podman run --rm "$IMAGE:latest" bootc container lint
 
-      - name: 推送
+      - name: Push image
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         run: |
           podman push "$IMAGE:sha-${GITHUB_SHA::12}"
           podman push "$IMAGE:latest"
 
-      - name: 摘要
+      - name: Write summary
         run: |
           {
             echo '### router-bootc'
             echo
-            echo '| 项 | 值 |'
+            echo '| Item | Value |'
             echo '|---|---|'
-            echo "| 镜像 | \`$IMAGE:sha-${GITHUB_SHA::12}\` |"
-            echo "| 基础 | \`quay.io/fedora/fedora-bootc:44\` |"
-            echo "| 大小 | $(podman image inspect --format '{{.Size}}' "$IMAGE:latest" | numfmt --to=iec) |"
-            echo "| 推送 | ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }} |"
+            echo "| Image | \`$IMAGE:sha-${GITHUB_SHA::12}\` |"
+            echo "| Base | \`quay.io/fedora/fedora-bootc:44\` |"
+            echo "| Size | $(podman image inspect --format '{{.Size}}' "$IMAGE:latest" | numfmt --to=iec) |"
+            echo "| Pushed | ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }} |"
           } >> "$GITHUB_STEP_SUMMARY"

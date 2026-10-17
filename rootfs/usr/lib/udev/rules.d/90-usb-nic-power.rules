@@ -1,4 +1,4 @@
-# USB 网卡 / 根集线器保持不休眠（原 NixOS boot.nix 的 extraRules）
+# Keep USB NICs and root hubs from autosuspending (ported from the NixOS boot.nix extraRules)
 ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="1d6b", ATTR{idProduct}=="0002", ATTR{power/control}="on"
 ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="1d6b", ATTR{idProduct}=="0003", ATTR{power/control}="on"
 ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="0bda", ATTR{idProduct}=="8153", ATTR{power/control}="on"
