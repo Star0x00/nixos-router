@@ -42,8 +42,8 @@ just build            # podman build -t localhost/router-bootc:dev .
 
 CI (GitHub Actions, `.github/workflows/build.yml`):
 
-- push to `main` -> build + `bootc container lint` + push `ghcr.io/<owner>/<repo>:latest`
-  and `:sha-<12 chars>`
+- push to `main` -> build + `bootc container lint` + push `ghcr.io/<owner>/router-bootc:latest`
+  and `:sha-<12 chars>` (reference is lowercased automatically)
 - pull request -> build + lint only, no push
 - weekly rebuild on Monday 03:00 UTC to track `fedora-bootc:44`
 - changes under `archive/**` and `*.md` do not trigger a build

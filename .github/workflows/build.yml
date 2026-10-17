@@ -11,7 +11,8 @@ on:
     - cron: '0 3 * * 1'
 
 env:
-  IMAGE: ghcr.io/${{ github.repository }}
+  # OCI references must be lowercase; github.repository preserves the owner's casing
+  IMAGE: ghcr.io/${{ github.repository_owner }}/router-bootc
 
 concurrency:
   group: build-${{ github.ref }}
@@ -27,8 +28,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Show podman version
-        run: podman --version
+      - name: Show podman version and image ref
+        run: |
+          podman --version
+          # normalize to lowercase in case the owner has uppercase characters
+          echo "IMAGE=$(echo "$IMAGE" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
 
       - name: Log in to GHCR
         if: github.event_name != 'pull_request'
