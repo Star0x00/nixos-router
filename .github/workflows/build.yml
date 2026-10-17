@@ -60,7 +60,7 @@ jobs:
             echo '| 项 | 值 |'
             echo '|---|---|'
             echo "| 镜像 | \`$IMAGE:sha-${GITHUB_SHA::12}\` |"
-            echo "| 基础 | \`quay.io/fedora/fedora-bootc:43\` |"
+            echo "| 基础 | \`quay.io/fedora/fedora-bootc:44\` |"
             echo "| 大小 | $(podman image inspect --format '{{.Size}}' "$IMAGE:latest" | numfmt --to=iec) |"
             echo "| 推送 | ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }} |"
           } >> "$GITHUB_STEP_SUMMARY"
