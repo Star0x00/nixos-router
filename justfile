@@ -1,20 +1,31 @@
-# 构建路由器配置
-build:
-	nix build .#nixosConfigurations.router.config.system.build.toplevel
+# 构建路由器 bootc 镜像
+build tag="dev":
+    podman build -t localhost/router-bootc:{{tag}} .
 
-# 远程部署（需 SSH root@10.10.10.1）
-deploy:
-	nixos-rebuild switch --flake .#router --target-host root@10.10.10.1 --use-remote-sudo
-switch:
-	sudo nixos-rebuild switch --flake ~/nixos-router#router
+lint tag="dev":
+    podman run --rm localhost/router-bootc:{{tag}} bootc container lint
 
-# [已废弃] 重新生成 sing-box A/B 的 base 模板(地区节点组), 需 SubStore 在跑
-# URL 即 services/deprecated/sing-box.nix 里 instances.<x>.nodeUrl, 换订阅时两边一起改
-# (dae 已改为直接拉 SubStore 的 ?target=V2Ray 订阅, 不再需要这两个 base)
-gen-bases: gen-a-base gen-b-base
+push tag="dev":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    t={{tag}}
+    podman tag localhost/router-bootc:$t 10.10.10.1:3000/cyrene/router-bootc:$t
+    podman push 10.10.10.1:3000/cyrene/router-bootc:$t
 
-gen-a-base:
-	node hosts/router/assets/gen-singbox-base.mjs 'http://127.0.0.1:3001/qwerhyy123/download/collection/singbox?target=sing-box' hosts/router/assets/singbox-a-base.json
+# 装机到指定盘（会清空该盘）
+install disk tag="dev":
+    podman run --rm --privileged --pid=host --ipc=host \
+      -v /var/lib/containers:/var/lib/containers -v /dev:/dev \
+      --security-opt label=type:unconfined_t \
+      localhost/router-bootc:{{tag}} \
+      bootc install to-disk --filesystem btrfs --wipe {{disk}}
 
-gen-b-base:
-	node hosts/router/assets/gen-singbox-base.mjs 'http://10.10.10.1:3001/qwerhyy123/download/jiuxiang?target=sing-box' hosts/router/assets/singbox-b-base.json
+# 生成安装 ISO 到 ./output
+iso tag="dev":
+    mkdir -p output
+    podman run --rm --privileged --pid=host --security-opt label=type:unconfined_t \
+      -v /var/lib/containers/storage:/var/lib/containers/storage \
+      -v "$PWD/output:/output" \
+      quay.io/centos-bootc/bootc-image-builder:latest \
+      --type anaconda-iso --rootfs btrfs \
+      localhost/router-bootc:{{tag}}

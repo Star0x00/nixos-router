@@ -1,0 +1,15 @@
+# 节点池: dae 直接吃 Sub-Store 的订阅(不再经过 sing-box)。
+#
+# Sub-Store 的 `target=V2Ray` 输出 = base64(每行一个分享链接),
+# 正是 dae 订阅支持的格式之一(另一种是 SIP008 JSON)。
+#
+# 只有这一路订阅: 本机流量和 LAN 设备流量共用同一份节点池,
+# 不再区分原来的 sing-box A/B。
+subscription {
+    sub_a: 'http://127.0.0.1:3001/qwerhyy123/download/collection/singbox?target=V2Ray'
+
+    # 大流量下载专用订阅(lxy)。主订阅(collection)多为 IEPL 高价小流量节点,
+    # 把 docker/ghcr/包管理等大文件下载单独走这一路, 省主订阅流量。
+    # 同一台 Sub-Store, 所以用 127.0.0.1 即可。
+    sub_lxy: 'http://127.0.0.1:3001/qwerhyy123/download/lxy?target=V2Ray'
+}

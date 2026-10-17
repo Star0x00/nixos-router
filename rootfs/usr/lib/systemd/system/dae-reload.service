@@ -1,0 +1,8 @@
+[Unit]
+Description=dae 订阅刷新(平滑 reload)
+After=dae.service
+Requires=dae.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/dae reload

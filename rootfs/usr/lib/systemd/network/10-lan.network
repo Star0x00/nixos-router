@@ -1,0 +1,10 @@
+[Match]
+Name=enp0s20f0u1
+
+[Network]
+Description=LAN (USB NIC)
+Address=10.10.10.1/24
+IPMasquerade=both
+
+[Link]
+RequiredForOnline=yes

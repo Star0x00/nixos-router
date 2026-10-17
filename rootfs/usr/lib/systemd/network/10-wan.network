@@ -1,0 +1,7 @@
+[Match]
+Name=eno1
+
+[Network]
+Description=WAN
+DHCP=yes
+IPv6AcceptRA=no
