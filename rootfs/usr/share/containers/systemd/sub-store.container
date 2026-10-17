@@ -1,0 +1,20 @@
+[Unit]
+Description=Sub-Store subscription manager
+
+[Container]
+Image=docker.io/xream/sub-store:http-meta
+ContainerName=sub-store
+PublishPort=3001:3001
+Volume=/var/lib/sub-store:/opt/app/data:Z
+Environment=SUB_STORE_FRONTEND_BACKEND_PATH=/qwerhyy123
+Environment=SUB_STORE_BACKEND_SYNC_CRON=55 23 * * *
+Environment=SUB_STORE_BACKEND_UPLOAD_CRON=0 4 * * *
+Environment=TZ=Asia/Shanghai
+
+[Service]
+Restart=always
+After=network-online.target
+Wants=network-online.target
+
+[Install]
+WantedBy=multi-user.target

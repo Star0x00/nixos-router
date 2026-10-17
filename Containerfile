@@ -1,7 +1,8 @@
-# fedora-bootc-router — skeleton image
+# fedora-bootc-router
 #
-# Scope: installable, bootable, DHCP, SSH, forwarding.
-# No kea / dae / forgejo / containers yet. Services are added one at a time.
+# Scope so far: installable, bootable, DHCP, SSH, forwarding,
+# plus dae (eBPF transparent proxy) and Sub-Store (quadlet container).
+# kea / forgejo / remaining containers come later.
 #
 # Rule: static config goes in /usr; only machine-local state belongs in /etc.
 FROM quay.io/fedora/fedora-bootc:44
@@ -13,7 +14,15 @@ RUN dnf -y install --setopt=install_weak_deps=False \
         openssh-server \
         jq curl wget iproute iputils tcpdump bind-utils \
         tar rsync vim-enhanced less \
-        podman \
+        podman glibc-langpack-en \
+    && dnf clean all \
+    && rm -rf /var/cache/dnf /var/cache/libdnf5
+
+# ── stage 3a: dae (eBPF transparent proxy) ──
+# Upstream RPM repo; the package ships /usr/bin/dae plus a stock systemd unit
+# and an example /etc/dae/config.dae (overwritten by rootfs/ below).
+RUN curl -fsSL -o /etc/yum.repos.d/daeuniverse.repo https://daeuniverse.pages.dev/daeuniverse.repo \
+    && dnf -y install --setopt=install_weak_deps=False dae \
     && dnf clean all \
     && rm -rf /var/cache/dnf /var/cache/libdnf5
 
@@ -30,7 +39,11 @@ RUN systemctl mask \
         systemd-networkd.service \
         systemd-networkd-wait-online.service \
         sshd.service \
-        nftables.service
+        nftables.service \
+        dae.service \
+        dae-reload.timer
+# Quadlet units under /usr/share/containers/systemd are generated at boot;
+# their [Install] section makes them start without an explicit enable.
 
 # ── machine identity ──
 RUN echo 'router' > /etc/hostname \

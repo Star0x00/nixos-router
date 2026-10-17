@@ -1,0 +1,10 @@
+[Unit]
+Description=Periodically refresh dae subscriptions
+
+[Timer]
+OnCalendar=*-*-* 00/6:30:00
+Persistent=true
+RandomizedDelaySec=5min
+
+[Install]
+WantedBy=timers.target

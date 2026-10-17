@@ -19,8 +19,11 @@ The old NixOS configuration is kept untouched under `archive/`.
 Containerfile               # skeleton image (stage 2)
 .github/workflows/build.yml # CI: build + lint + push to GHCR
 rootfs/                     # copied verbatim onto / (static config prefers /usr)
-  usr/share/router/         # nftables and other config sources
-  usr/lib/systemd/system/   # unit drop-ins
+  etc/dae/                  # dae entry config + config.d fragments (mode 0400)
+  etc/containers/           # registries.conf.d (insecure LAN registry)
+  usr/share/containers/systemd/  # quadlet units (sub-store)
+  usr/share/router/         # nftables conf + helper scripts
+  usr/lib/systemd/system/   # unit drop-ins, dae-reload timer
 archive/                    # previous NixOS repo (reference only, not built)
 ```
 
@@ -29,8 +32,9 @@ archive/                    # previous NixOS repo (reference only, not built)
 - **Stage 1** Repo reshuffle: all NixOS config moved into `archive/`. Done.
 - **Stage 2** Skeleton image: FROM fedora-bootc:44 + base packages + static config
   (networkd/nftables/sshd/sysctl/modprobe/udev/initramfs), passes `bootc container lint`.
-- **Stage 3+** Add services one at a time: DHCP, proxy, containers, code hosting,
-  each validated on its own.
+- **Stage 3a** dae (eBPF transparent proxy) + Sub-Store (quadlet container).
+- **Stage 3b+** Remaining services one at a time: DHCP (kea), other containers,
+  code hosting (forgejo).
 
 ## Building
 

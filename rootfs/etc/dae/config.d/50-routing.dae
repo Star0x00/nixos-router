@@ -1,0 +1,111 @@
+routing {
+    # ── 基础设施直连(避免回环) ──
+    pname(aardvark-dns) -> must_direct
+    pname(systemd-networkd, NetworkManager) -> must_direct
+    pname(conmon, netavark) -> must_direct
+    pname(containerd, dockerd) -> must_direct
+
+    # ── DNS ──
+    l4proto(udp, tcp) && dport(53) -> direct
+
+    # ── 容器网段直连(容器间通信 + 容器→宿主机不走代理) ──
+    dip(10.88.0.0/16) -> direct
+    dip(10.89.0.0/24) -> direct
+
+    # ── 直连: 中国服务 ──
+    domain(keyword: hdslb) -> must_direct
+    domain(suffix: hdslb.com) -> must_direct
+    domain(suffix: mmstat.com) -> direct
+    domain(suffix: qianwenai.com) -> direct
+    domain(suffix: hypergryph.com) -> direct
+    domain(geosite:cn) -> direct
+    domain(geosite:bilibili) -> must_direct
+    domain(geosite:bilibili2) -> must_direct
+    domain(geosite:bilibili-cdn) -> must_direct
+    domain(geosite:bilibili-game) -> must_direct
+    domain(geosite:netease) -> direct
+    domain(geosite:steam) -> direct
+    domain(geosite:aliyun) -> direct
+    domain(geosite:alibaba) -> direct
+    domain(geosite:aligames) -> direct
+    domain(geosite:alibabacloud) -> direct
+    domain(geosite:tencent) -> direct
+    domain(geosite:tencent-dev) -> direct
+    domain(geosite:tencent-tme) -> direct
+    domain(geosite:tencent-games) -> direct
+    domain(geosite:volcengine) -> direct
+    domain(geosite:category-education-cn) -> direct
+    domain(geosite:category-media-cn) -> direct
+    domain(geosite:category-games-cn) -> direct
+    domain(geosite:category-entertainment-cn) -> direct
+    domain(geosite:category-bank-cn) -> direct
+    domain(geosite:category-netdisk-cn) -> direct
+    domain(geosite:category-social-media-cn) -> direct
+    domain(geosite:category-scholar-cn) -> direct
+    domain(geosite:category-dev-cn) -> direct
+    domain(geosite:category-ai-cn) -> direct
+    domain(geosite:category-ntp-cn) -> direct
+
+    # ── 大流量下载 → lxy 订阅(把主订阅 IEPL 的流量省下来) ──
+    #
+    # 容器镜像仓库。geosite:category-container 已覆盖:
+    #   azurecr.io / docker.io / ecr.aws / gcr.io / ghcr.io /
+    #   mcr.microsoft.com / quay.io / registry.gitlab.com / registry.k8s.io
+    # 它没覆盖的 Docker Hub / GHCR blob CDN 等再用 suffix 补上。
+    # ⚠ 这段必须在下面 github 规则之前: geosite:github 也含 ghcr.io 和
+    #   githubusercontent.com, 晚了就会被 github → cloudflare 抢走。
+    domain(geosite:category-container, geosite:flatpak, geosite:nixos, geosite:wallhaven, geosite:fedora) -> lxy
+    domain(suffix: docker.com, docker.io, auth.docker.io,
+           production.cloudflare.docker.com, lscr.io, nvcr.io,
+           public.ecr.aws, pkg-containers.githubusercontent.com,
+	       registry.fedoraproject.org, rpmfusion.org, mirrors.fedoraproject.org) -> lxy
+
+    # 其它大文件下载: 包管理器 / 模型 / GitHub Release。
+    # 不想让这些走 lxy 就整段删掉。
+    domain(suffix: registry.npmjs.org, pypi.org, files.pythonhosted.org,
+           crates.io, static.crates.io, repo1.maven.org,
+           huggingface.co, cdn-lfs.huggingface.co, cdn-lfs.hf.co,
+           objects.githubusercontent.com, release-assets.githubusercontent.com,
+           codeload.github.com) -> lxy
+
+    # ── 代理: 指定服务(对应 singbox-a-base.json 的 route 规则) ──
+    # Google 系 → google 组
+    domain(suffix: gstatic.com) -> google
+    domain(geosite:google, geosite:youtube, geosite:google-deepmind,
+           geosite:google-gemini, geosite:googlefcm, geosite:android,
+           geosite:openai) -> google
+
+    # GitHub / Fedora 系 → cloudflare 组
+    domain(suffix: github.com, githubusercontent.com) -> cloudflare
+    domain(geosite:github) -> cloudflare
+
+    # Meta / AI 系 → japan 组
+    domain(geosite:meta) -> japan
+    domain(suffix: opencode.ai, meta.ai) -> japan
+
+    # ── 代理: 非中国互联网服务兜底 → cloudflare 组 ──
+    domain(geosite:category-ai-!cn, geosite:category-ai-chat-!cn,
+           geosite:category-social-media-!cn, geosite:category-media,
+           geosite:category-communication,
+           geosite:category-dev, geosite:category-games-!cn,
+           geosite:category-cryptocurrency, geosite:category-entertainment,
+           geosite:category-anticensorship, geosite:category-scholar-!cn,
+           geosite:category-browser-!cn, geosite:category-remote-control,
+           geosite:category-proxy-tunnels, geosite:category-pt) -> cloudflare
+
+    domain(geosite:category-porn) -> block
+
+    # ── 按 IP 直连 ──
+    dip(224.0.0.0/3, 'ff00::/8') -> direct
+    dip(geoip:private) -> direct
+    dip(geoip:cn) -> direct
+
+    # ── 禁 QUIC ──
+    l4proto(udp) && dport(443) -> block
+
+    # ── UDP 全部直连(保持原行为; 若想让 dae 直接代理 UDP 可删掉这行) ──
+    l4proto(udp) -> direct
+
+    # ── 其余 TCP 走通用代理组 ──
+    fallback: cloudflare
+}
