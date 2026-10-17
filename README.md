@@ -37,6 +37,20 @@ archive/                    # previous NixOS repo (reference only, not built)
   not needed. Lease DB persists in `/var/lib/systemd/network`.
 - **Stage 3c+** Remaining services one at a time: other containers, code hosting (forgejo).
 
+## Accounts
+
+No user account is baked into the image. Log in as `root` with the key in
+`rootfs/etc/ssh/authorized_keys/root`, then create one manually:
+
+```sh
+router-adduser cyrene        # useradd -m -G wheel, reuses the root SSH key
+passwd cyrene                # optional: also set a password
+```
+
+Accounts live in `/etc/passwd` and `/var/home` (both writable and upgrade-safe),
+so they persist across `bootc upgrade`. To bake one in anyway, derive an image
+with `systemd-sysusers` and `/usr/lib/sysusers.d/`.
+
 ## Building
 
 Locally:

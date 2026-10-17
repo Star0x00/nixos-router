@@ -15,7 +15,7 @@ RUN dnf -y install --setopt=install_weak_deps=False \
         openssh-server \
         jq curl wget iproute iputils tcpdump bind-utils \
         tar rsync vim-enhanced less \
-        podman glibc-langpack-en \
+        podman glibc-langpack-en sudo \
     && dnf clean all \
     && rm -rf /var/cache/dnf /var/cache/libdnf5
 
@@ -51,11 +51,10 @@ RUN echo 'router' > /etc/hostname \
     && ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
     && printf 'LANG=en_US.UTF-8\n' > /etc/locale.conf
 
-RUN useradd -m -G wheel -s /bin/bash cyrene \
-    && install -d -m 0700 -o cyrene -g cyrene /home/cyrene/.ssh \
-    && cp /etc/ssh/authorized_keys/root /home/cyrene/.ssh/authorized_keys \
-    && chown cyrene:cyrene /home/cyrene/.ssh/authorized_keys \
-    && chmod 0600 /home/cyrene/.ssh/authorized_keys
+# No accounts are created here on purpose. Log in as root with the key from
+# /etc/ssh/authorized_keys/root, then run `router-adduser <name>` once.
+# /home is a symlink to /var/home on bootc, so accounts survive upgrades.
+RUN install -m 0755 /usr/share/router/bin/router-adduser /usr/bin/router-adduser
 
 # ── initramfs (r8152 must be present in the initrd) ──
 # Rerun this step after touching /usr/lib/dracut/dracut.conf.d.
