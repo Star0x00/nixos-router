@@ -39,13 +39,22 @@ archive/                    # previous NixOS repo (reference only, not built)
 
 ## Accounts
 
-No user account is baked into the image. Log in as `root` with the key in
-`rootfs/etc/ssh/authorized_keys/root`, then create one manually:
+No user account and no password are baked into the image.
+
+**Root login is SSH-key-only.** The key lives in
+`rootfs/etc/ssh/authorized_keys/root`; `/etc/ssh/sshd_config.d/10-router.conf`
+adds that path to `AuthorizedKeysFile`, because Fedora's default only looks at
+`~/.ssh/authorized_keys`.
 
 ```sh
+ssh root@10.10.10.1          # key from that file
+
 router-adduser cyrene        # useradd -m -G wheel, reuses the root SSH key
-passwd cyrene                # optional: also set a password
+passwd root                  # optional: needed for console/TTY login
 ```
+
+Without `passwd root`, the physical console has no way in (root is locked, no
+key path applies to a TTY). Set it once over SSH if you want a console fallback.
 
 Accounts live in `/etc/passwd` and `/var/home` (both writable and upgrade-safe),
 so they persist across `bootc upgrade`. To bake one in anyway, derive an image

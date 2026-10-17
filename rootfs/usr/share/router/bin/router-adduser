@@ -24,4 +24,4 @@ if [ ! -s "/var/home/$user/.ssh/authorized_keys" ] && [ -s "$keyfile" ]; then
     echo "installed SSH key from $keyfile"
 fi
 
-echo "set a password with: passwd $user"
+echo "if you need console login: passwd $user"
