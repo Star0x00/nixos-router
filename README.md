@@ -33,8 +33,9 @@ archive/                    # previous NixOS repo (reference only, not built)
 - **Stage 2** Skeleton image: FROM fedora-bootc:44 + base packages + static config
   (networkd/nftables/sshd/sysctl/modprobe/udev/initramfs), passes `bootc container lint`.
 - **Stage 3a** dae (eBPF transparent proxy) + Sub-Store (quadlet container).
-- **Stage 3b+** Remaining services one at a time: DHCP (kea), other containers,
-  code hosting (forgejo).
+- **Stage 3b** LAN DHCP server via systemd-networkd (`DHCPServer=yes`), so kea is
+  not needed. Lease DB persists in `/var/lib/systemd/network`.
+- **Stage 3c+** Remaining services one at a time: other containers, code hosting (forgejo).
 
 ## Building
 

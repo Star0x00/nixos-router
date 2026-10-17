@@ -6,5 +6,16 @@ Description=LAN (USB NIC)
 Address=10.10.10.1/24
 IPMasquerade=both
 
+# DHCP server for the LAN (replaces the old kea instance).
+# Pool: 10.10.10.2 - 10.10.10.100, gateway and DNS both point at the router.
+DHCPServer=yes
+PoolOffset=2
+PoolSize=99
+EmitRouter=yes
+EmitDNS=yes
+DNS=10.10.10.1
+DefaultLeaseTimeSec=4000
+MaxLeaseTimeSec=4000
+
 [Link]
 RequiredForOnline=yes

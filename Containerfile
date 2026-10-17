@@ -1,8 +1,9 @@
 # fedora-bootc-router
 #
 # Scope so far: installable, bootable, DHCP, SSH, forwarding,
-# plus dae (eBPF transparent proxy) and Sub-Store (quadlet container).
-# kea / forgejo / remaining containers come later.
+# plus dae (eBPF transparent proxy), Sub-Store (quadlet container) and the
+# LAN DHCP server (systemd-networkd built-in).
+# forgejo / remaining containers come later.
 #
 # Rule: static config goes in /usr; only machine-local state belongs in /etc.
 FROM quay.io/fedora/fedora-bootc:44
