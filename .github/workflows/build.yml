@@ -1,0 +1,66 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['archive/**', '**/*.md']
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    # 每周一 03:00 UTC 用最新基础镜像重建，跟进 fedora-bootc 更新
+    - cron: '0 3 * * 1'
+
+env:
+  IMAGE: ghcr.io/${{ github.repository }}
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Podman 版本
+        run: podman --version
+
+      - name: 登录 GHCR
+        if: github.event_name != 'pull_request'
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | podman login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: 构建
+        run: |
+          podman build \
+            --pull=always \
+            --platform linux/amd64 \
+            -t "$IMAGE:sha-${GITHUB_SHA::12}" \
+            -t "$IMAGE:latest" \
+            .
+
+      - name: 结构检查
+        run: podman run --rm "$IMAGE:latest" bootc container lint
+
+      - name: 推送
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        run: |
+          podman push "$IMAGE:sha-${GITHUB_SHA::12}"
+          podman push "$IMAGE:latest"
+
+      - name: 摘要
+        run: |
+          {
+            echo '### router-bootc'
+            echo
+            echo '| 项 | 值 |'
+            echo '|---|---|'
+            echo "| 镜像 | \`$IMAGE:sha-${GITHUB_SHA::12}\` |"
+            echo "| 基础 | \`quay.io/fedora/fedora-bootc:43\` |"
+            echo "| 大小 | $(podman image inspect --format '{{.Size}}' "$IMAGE:latest" | numfmt --to=iec) |"
+            echo "| 推送 | ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }} |"
+          } >> "$GITHUB_STEP_SUMMARY"

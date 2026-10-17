@@ -4,7 +4,7 @@
 # 不含 kea / dae / forgejo / 任何容器。服务后续逐个加。
 #
 # 规则：静态配置进 /usr，机器本地状态才进 /etc。
-FROM quay.io/fedora/fedora-bootc:43
+FROM quay.io/fedora/fedora-bootc:44
 
 # ── 基础包 ──
 RUN dnf -y install --setopt=install_weak_deps=False \
@@ -33,7 +33,7 @@ RUN systemctl mask \
         nftables.service
 
 # ── 机器身份 ──
-RUN echo 'nixos-router' > /etc/hostname \
+RUN echo 'router' > /etc/hostname \
     && ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
     && printf 'LANG=en_US.UTF-8\n' > /etc/locale.conf
 

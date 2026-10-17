@@ -16,7 +16,8 @@ Fedora bootc 自定义 OCI 系统镜像，替换原 NixOS 路由器。
 ## 目录
 
 ```
-Containerfile               # 阶段 2+ 逐步补全
+Containerfile               # 骨架镜像（阶段 2）
+.github/workflows/build.yml # CI：构建 + lint + 推送 GHCR
 rootfs/                     # 原样 COPY 到镜像 / 的文件树（静态配置优先进 /usr）
   usr/share/router/         # nftables 等配置源
   usr/lib/systemd/system/   # unit drop-in
@@ -30,15 +31,20 @@ archive/                    # 原 NixOS 仓库（只读参考，不再构建）
 - **阶段 2** 骨架镜像：FROM fedora-bootc:43 + 基础包 + 静态配置（networkd/nftables/sshd/sysctl/modprobe/udev/initramfs），`bootc container lint` 通过。
 - **阶段 3+** 服务逐个加：DHCP → 代理 → 容器 → 代码托管，每个单独验证。
 
-## 构建 / 检查
+## 构建
+
+本地：
 
 ```sh
-just build dev        # podman build -t localhost/router-bootc:dev .
-just lint dev         # bootc container lint
-just push 2025.10.17  # 推到 10.10.10.1:3000
-just install /dev/sdX # bootc install to-disk --filesystem btrfs --wipe
-just iso dev          # 出 anaconda-iso 到 ./output
+just build            # podman build -t localhost/router-bootc:dev .
 ```
+
+CI（GitHub Actions，`.github/workflows/build.yml`）：
+
+- push 到 `main` → 构建 + `bootc container lint` + 推送 `ghcr.io/<owner>/<repo>:latest` 和 `:sha-<12位>`
+- PR → 只构建 + lint，不推送
+- 每周一 03:00 UTC 自动重建，跟进 `fedora-bootc:43` 更新
+- `archive/**` 与 `*.md` 的改动不触发构建
 
 ## 状态
 
