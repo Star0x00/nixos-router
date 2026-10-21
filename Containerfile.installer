@@ -15,13 +15,18 @@
 FROM quay.io/fedora/fedora-bootc:44
 
 # ── anaconda runtime + the build tools image-builder requires ──
+# osbuild runs its stage scripts inside this container's /usr (pipeline.py picks
+# the "build" pipeline tree as the stage buildroot), so tools the stages shell
+# out to must be installed *here*, not on the host:
+#   xorrisofs/implantisomd5  -> bootiso assembly
+#   mako + lorax templates   -> org.osbuild.lorax-script
 RUN dnf install -y --setopt=install_weak_deps=False \
         anaconda anaconda-install-img-deps anaconda-dracut \
         dracut-config-generic dracut-network net-tools \
         grub2-efi-x64-cdboot plymouth \
         default-fonts-core-sans default-fonts-other-sans google-noto-sans-cjk-fonts \
     && dnf install -y --setopt=install_weak_deps=False \
-        xorrisofs squashfs-tools \
+        xorrisofs squashfs-tools isomd5sum python3-mako lorax-templates-generic \
     && dnf clean all \
     && rm -rf /var/cache/dnf /var/cache/libdnf5
 
