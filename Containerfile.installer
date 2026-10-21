@@ -1,53 +1,81 @@
 # router-installer
 #
-# Anaconda environment used to build the installable ISO:
+# Anaconda environment used to build the installable ISO, following
+# https://osbuild.org/docs/developer-guide/projects/image-builder/advanced/bootc/isos/
+# ("Generic" section + its example Containerfile):
 #
-#   sudo image-builder build bootc-installer \
-#     --bootc-ref localhost/router-installer:latest \
-#     --bootc-installer-payload-ref ghcr.io/<owner>/router-bootc:latest \
-#     --bootc-default-fs xfs \
-#     --output-dir ./out
+#   sudo image-builder build bootc-generic-iso \
+#     --bootc-ref ghcr.io/<owner>/router-installer:latest \
+#     --bootc-pull-container --bootc-default-fs xfs \
+#     --output-dir ./out --progress=verbose
 #
-# The payload (localhost/router-bootc) is embedded into the ISO from the host's
-# rootful containers-storage, so the install itself needs no network. The image
-# type generates its own kickstart and grub entries; nothing here configures
-# them. See https://osbuild.org/docs/developer-guide/projects/image-builder/advanced/bootc/isos/
+# bootc-generic-iso injects no anaconda/users/lorax/dracut stages (unlike
+# bootc-installer), so everything the installer environment needs -- the `install`
+# account, the list-harddrives helper, default.target=anaconda.target, an
+# anaconda-capable initramfs -- is done here, exactly like the example.
+#
+# The target image is named by BOOTC_IMGREF and is pulled from the registry by
+# anaconda during install (needs network, i.e. WAN up on the router).
 FROM quay.io/fedora/fedora-bootc:44
 
-# ── anaconda runtime + the build tools image-builder requires ──
-# osbuild runs its stage scripts inside this container's /usr (pipeline.py picks
-# the "build" pipeline tree as the stage buildroot), so tools the stages shell
-# out to must be installed *here*, not on the host:
-#   xorrisofs/implantisomd5  -> bootiso assembly
-#   mako + lorax templates   -> org.osbuild.lorax-script
+ARG BOOTC_IMGREF=ghcr.io/owner/router-bootc:latest
+
+# ── anaconda runtime + the tools the bootiso stages shell out to ──
+# osbuild runs its stage scripts inside this container's /usr (pipeline.py uses
+# the "build" pipeline tree as the stage buildroot), so mksquashfs/xorrisofs/
+# implantisomd5/grub2-mkimage must exist *here*, not on the host.
 RUN dnf install -y --setopt=install_weak_deps=False \
         anaconda anaconda-install-img-deps anaconda-dracut \
         dracut-config-generic dracut-network net-tools \
         grub2-efi-x64-cdboot plymouth \
         default-fonts-core-sans default-fonts-other-sans google-noto-sans-cjk-fonts \
     && dnf install -y --setopt=install_weak_deps=False \
-        xorrisofs squashfs-tools isomd5sum python3-mako lorax-templates-generic \
+        xorrisofs squashfs-tools \
     && dnf clean all \
     && rm -rf /var/cache/dnf /var/cache/libdnf5
 
 # ── contract: shim + grub EFI binaries under /boot/efi/EFI/$VENDOR ──
 RUN mkdir -p /boot/efi && cp -ra /usr/lib/efi/*/*/EFI /boot/efi
 
-# ── lorax emulation: NOT done here ──
-# The bootc-installer image type injects anaconda-tree stages `org.osbuild.users`
-# (creates the `install` user, unlocks root) and `org.osbuild.lorax-script`
-# (runs lorax-templates-generic's runtime-postinstall.tmpl on the tree), which
-# already does the list-harddrives/repos-dir/default.target/gpt-auto-generator/
-# autovt/logind work that the generic-iso docs do by hand. Doing any of it here
-# collides: the template's `move usr/share/anaconda/list-harddrives-stub ...` and
-# `move etc/yum.repos.d etc/anaconda.repos.d` are plain os.rename() and fail if
-# the source is gone.
+# ── ISO label + boot entries (read by image-builder from the container) ──
+RUN mkdir -p /usr/lib/image-builder/bootc && cat > /usr/lib/image-builder/bootc/iso.yaml <<'EOT'
+label: "router-installer"
+grub2:
+  entries:
+    - name: "Install router (bootc)"
+      linux: "/images/pxeboot/vmlinuz inst.stage2=hd:LABEL=router-installer console=tty0 inst.text selinux=0"
+      initrd: "/images/pxeboot/initrd.img"
+EOT
 
-# ── /var/mnt must exist ──
-# fedora-bootc ships /mnt -> var/mnt and /srv -> var/srv as dangling symlinks;
-# lorax's runtime-postinstall.tmpl does `symlink ../run/install mnt/install`, and
-# os.symlink() needs the parent dir, so it dies with ENOENT without /var/mnt.
-RUN mkdir -p /var/mnt
+# ── payload: what anaconda installs (see interactive-defaults.ks) ──
+# Same ref for source and target so the installed system tracks the registry tag
+# and `bootc upgrade` keeps working.
+RUN mkdir -p /usr/share/anaconda && printf 'bootc --source-imgref registry:%s --target-imgref %s\n' \
+        "$BOOTC_IMGREF" "$BOOTC_IMGREF" > /usr/share/anaconda/interactive-defaults.ks
+
+# ── what lorax normally does to make anaconda boot ──
+RUN echo "install:x:0:0:root:/root:/usr/libexec/anaconda/run-anaconda" >> /etc/passwd \
+    && echo "install::14438:0:99999:7:::" >> /etc/shadow \
+    && passwd -d root \
+    && mv /usr/share/anaconda/list-harddrives-stub /usr/bin/list-harddrives \
+    && mv /etc/yum.repos.d /etc/anaconda.repos.d \
+    && ln -s /lib/systemd/system/anaconda.target /etc/systemd/system/default.target \
+    && rm -v /usr/lib/systemd/system-generators/systemd-gpt-auto-generator \
+    && ln -sf /usr/lib/systemd/system/anaconda-shell@.service /usr/lib/systemd/system/autovt@.service \
+    && mkdir -p /usr/lib/systemd/logind.conf.d \
+    && printf '[Login]\nReserveVT=2\n' > /usr/lib/systemd/logind.conf.d/anaconda-shell.conf \
+    && mkdir -p "$(realpath /root)"
+
+# anaconda runs as root; pipewire's user units would refuse to start otherwise
+RUN mkdir -p /etc/systemd/user/pipewire.service.d /etc/systemd/user/pipewire.socket.d \
+    && printf '[Unit]\nConditionUser=\n' > /etc/systemd/user/pipewire.service.d/allowroot.conf \
+    && printf '[Unit]\nConditionUser=\n' > /etc/systemd/user/pipewire.socket.d/allowroot.conf
+
+# ── initramfs with anaconda (mandatory: image-builder ships this initrd) ──
+RUN set -eux; \
+    kver=$(kernel-install list --json pretty | jq -r '.[] | select(.has_kernel == true) | .version'); \
+    DRACUT_NO_XATTR=1 dracut --force -v --zstd --reproducible --no-hostonly \
+        --add "anaconda" "/usr/lib/modules/${kver}/initramfs.img" "${kver}"
 
 # ── install config, same as the payload's rootfs/usr/lib/bootc/install ──
 RUN mkdir -p /usr/lib/bootc/install \
