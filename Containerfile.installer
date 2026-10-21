@@ -33,20 +33,21 @@ RUN dnf install -y --setopt=install_weak_deps=False \
 # ── contract: shim + grub EFI binaries under /boot/efi/EFI/$VENDOR ──
 RUN mkdir -p /boot/efi && cp -ra /usr/lib/efi/*/*/EFI /boot/efi
 
-# ── what lorax normally does to make anaconda boot ──
-# The `install` user and root's empty password are NOT set here: image-builder's
-# anaconda-tree pipeline has an org.osbuild.users stage that does it. Creating
-# the user here makes that stage take the usermod() path, which in osbuild 193
-# passes an int gid to subprocess and dies with
-# "TypeError: expected str, bytes or os.PathLike object, not int".
-RUN mv /usr/share/anaconda/list-harddrives-stub /usr/bin/list-harddrives \
-    && mv /etc/yum.repos.d /etc/anaconda.repos.d \
-    && ln -s /lib/systemd/system/anaconda.target /etc/systemd/system/default.target \
-    && rm -v /usr/lib/systemd/system-generators/systemd-gpt-auto-generator \
-    && ln -sf /usr/lib/systemd/system/anaconda-shell@.service /usr/lib/systemd/system/autovt@.service \
-    && mkdir -p /usr/lib/systemd/logind.conf.d \
-    && printf '[Login]\nReserveVT=2\n' > /usr/lib/systemd/logind.conf.d/anaconda-shell.conf \
-    && mkdir -p "$(realpath /root)"
+# ── lorax emulation: NOT done here ──
+# The bootc-installer image type injects anaconda-tree stages `org.osbuild.users`
+# (creates the `install` user, unlocks root) and `org.osbuild.lorax-script`
+# (runs lorax-templates-generic's runtime-postinstall.tmpl on the tree), which
+# already does the list-harddrives/repos-dir/default.target/gpt-auto-generator/
+# autovt/logind work that the generic-iso docs do by hand. Doing any of it here
+# collides: the template's `move usr/share/anaconda/list-harddrives-stub ...` and
+# `move etc/yum.repos.d etc/anaconda.repos.d` are plain os.rename() and fail if
+# the source is gone.
+
+# ── /var/mnt must exist ──
+# fedora-bootc ships /mnt -> var/mnt and /srv -> var/srv as dangling symlinks;
+# lorax's runtime-postinstall.tmpl does `symlink ../run/install mnt/install`, and
+# os.symlink() needs the parent dir, so it dies with ENOENT without /var/mnt.
+RUN mkdir -p /var/mnt
 
 # ── install config, same as the payload's rootfs/usr/lib/bootc/install ──
 RUN mkdir -p /usr/lib/bootc/install \
