@@ -38,21 +38,11 @@ RUN mkdir -p /boot/efi && cp -ra /usr/lib/efi/*/*/EFI /boot/efi
 # some configuration for our ISO
 
 RUN mkdir -p /usr/lib/image-builder/bootc
-
-COPY <<EOT /usr/lib/image-builder/bootc/iso.yaml
-label: "Fedora-bootc-Installer"
-grub2:
-  entries:
-    - name: "Install Fedora (bootc)"
-      linux: "/images/pxeboot/vmlinuz inst.stage2=hd:LABEL=Fedora-bootc-Installer console=tty0 inst.graphical selinux=0 rhgb quiet"
-      initrd: "/images/pxeboot/initrd.img"
-EOT
+COPY installer/iso.yaml /usr/lib/image-builder/bootc/iso.yaml
 
 # some configuration for anaconda
 
-COPY <<EOT /usr/share/anaconda/interactive-defaults.ks
-bootc --source-imgref registry:ghcr.io/star0x00/router-bootc:latest --target-imgref ghcr.io/star0x00/router-bootc:latest
-EOT
+COPY installer/interactive-defaults.ks /usr/share/anaconda/interactive-defaults.ks
 
 # ---
 
@@ -71,10 +61,7 @@ RUN mv /usr/share/anaconda/list-harddrives-stub /usr/bin/list-harddrives && \
 RUN ln -s /usr/lib/systemd/system/anaconda-shell@.service /usr/lib/systemd/system/autovt@.service
 
 RUN mkdir /usr/lib/systemd/logind.conf.d
-COPY <<EOT /usr/lib/systemd/logind.conf.d/anaconda-shell.conf
-[Login]
-ReserveVT=2
-EOT
+COPY installer/anaconda-shell.conf /usr/lib/systemd/logind.conf.d/anaconda-shell.conf
 
 RUN mkdir "$(realpath /root)" && \
     kernel=$(kernel-install list --json pretty | jq -r '.[] | select(.has_kernel == true) | .version') && \
@@ -83,13 +70,7 @@ RUN mkdir "$(realpath /root)" && \
         "/usr/lib/modules/${kernel}/initramfs.img" "${kernel}"
 
 RUN mkdir /etc/systemd/user/pipewire.service.d/
-COPY <<EOT /etc/systemd/user/pipewire.service.d/allowroot.conf
-[Unit]
-ConditionUser=
-EOT
+COPY installer/allowroot.conf /etc/systemd/user/pipewire.service.d/allowroot.conf
 
 RUN mkdir /etc/systemd/user/pipewire.socket.d/
-COPY <<EOT /etc/systemd/user/pipewire.socket.d/allowroot.conf
-[Unit]
-ConditionUser=
-EOT
+COPY installer/allowroot.conf /etc/systemd/user/pipewire.socket.d/allowroot.conf
