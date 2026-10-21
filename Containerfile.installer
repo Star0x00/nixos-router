@@ -29,10 +29,12 @@ RUN dnf install -y --setopt=install_weak_deps=False \
 RUN mkdir -p /boot/efi && cp -ra /usr/lib/efi/*/*/EFI /boot/efi
 
 # ── what lorax normally does to make anaconda boot ──
-RUN echo "install:x:0:0:root:/root:/usr/libexec/anaconda/run-anaconda" >> /etc/passwd \
-    && echo "install::14438:0:99999:7:::" >> /etc/shadow \
-    && passwd -d root \
-    && mv /usr/share/anaconda/list-harddrives-stub /usr/bin/list-harddrives \
+# The `install` user and root's empty password are NOT set here: image-builder's
+# anaconda-tree pipeline has an org.osbuild.users stage that does it. Creating
+# the user here makes that stage take the usermod() path, which in osbuild 193
+# passes an int gid to subprocess and dies with
+# "TypeError: expected str, bytes or os.PathLike object, not int".
+RUN mv /usr/share/anaconda/list-harddrives-stub /usr/bin/list-harddrives \
     && mv /etc/yum.repos.d /etc/anaconda.repos.d \
     && ln -s /lib/systemd/system/anaconda.target /etc/systemd/system/default.target \
     && rm -v /usr/lib/systemd/system-generators/systemd-gpt-auto-generator \

@@ -4,3 +4,5 @@ result-*
 cache/
 *.qcow2
 *.iso
+.out/
+out/
