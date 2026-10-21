@@ -11,9 +11,10 @@ on:
     - cron: '0 3 * * 1'
 
 env:
-  # OCI references must be lowercase; github.repository preserves the owner's casing
-  IMAGE: ghcr.io/${{ github.repository_owner }}/router-bootc
-  INSTALLER_IMAGE: ghcr.io/${{ github.repository_owner }}/router-installer
+  # OCI references must be lowercase and github.repository_owner keeps the
+  # owner's casing (Star0x00), so it cannot be interpolated here.
+  IMAGE: ghcr.io/star0x00/router-bootc
+  INSTALLER_IMAGE: ghcr.io/star0x00/router-installer
 
 concurrency:
   group: build-${{ github.ref }}
@@ -32,8 +33,7 @@ jobs:
       - name: Show podman version and image ref
         run: |
           podman --version
-          # normalize to lowercase in case the owner has uppercase characters
-          echo "INSTALLER_IMAGE=$(echo "$INSTALLER_IMAGE" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
+          echo "IMAGE=$IMAGE INSTALLER_IMAGE=$INSTALLER_IMAGE"
 
       - name: Log in to GHCR
         if: github.event_name != 'pull_request'
@@ -86,7 +86,7 @@ jobs:
       - name: Show podman version and image ref
         run: |
           podman --version
-          echo "INSTALLER_IMAGE=$(echo "$INSTALLER_IMAGE" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
+          echo "IMAGE=$IMAGE INSTALLER_IMAGE=$INSTALLER_IMAGE"
 
       - name: Log in to GHCR
         if: github.event_name != 'pull_request'

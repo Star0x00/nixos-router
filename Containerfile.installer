@@ -58,7 +58,7 @@ RUN mv /usr/share/anaconda/list-harddrives-stub /usr/bin/list-harddrives && \
     ln -s /lib/systemd/system/anaconda.target /etc/systemd/system/default.target && \
     rm -v /usr/lib/systemd/system-generators/systemd-gpt-auto-generator
 
-RUN ln -s /usr/lib/systemd/system/anaconda-shell@.service /usr/lib/systemd/system/autovt@.service
+RUN ln -sf /usr/lib/systemd/system/anaconda-shell@.service /usr/lib/systemd/system/autovt@.service
 
 RUN mkdir /usr/lib/systemd/logind.conf.d
 COPY installer/anaconda-shell.conf /usr/lib/systemd/logind.conf.d/anaconda-shell.conf
