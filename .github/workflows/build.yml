@@ -33,7 +33,6 @@ jobs:
         run: |
           podman --version
           # normalize to lowercase in case the owner has uppercase characters
-          echo "IMAGE=$(echo "$IMAGE" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
           echo "INSTALLER_IMAGE=$(echo "$INSTALLER_IMAGE" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
 
       - name: Log in to GHCR
@@ -74,10 +73,8 @@ jobs:
   installer:
     # Anaconda environment for the installable ISO (image-builder's
     # bootc-generic-iso). The ISO itself is built locally, it needs root:
-    #   sudo image-builder build bootc-generic-iso \
-    #     --bootc-ref "$INSTALLER_IMAGE:latest" \
-    #     --bootc-pull-container --bootc-default-fs xfs --output-dir ./out
-    # BOOTC_IMGREF baked into interactive-defaults.ks is what anaconda installs.
+    #   sudo image-builder build --bootc-ref "$INSTALLER_IMAGE:latest" \
+    #     --bootc-default-fs xfs bootc-generic-iso
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -89,7 +86,6 @@ jobs:
       - name: Show podman version and image ref
         run: |
           podman --version
-          echo "IMAGE=$(echo "$IMAGE" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
           echo "INSTALLER_IMAGE=$(echo "$INSTALLER_IMAGE" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
 
       - name: Log in to GHCR
@@ -101,7 +97,6 @@ jobs:
           podman build \
             --pull=always \
             --platform linux/amd64 \
-            --build-arg "BOOTC_IMGREF=$IMAGE:latest" \
             -f Containerfile.installer \
             -t "$INSTALLER_IMAGE:sha-${GITHUB_SHA::12}" \
             -t "$INSTALLER_IMAGE:latest" \
