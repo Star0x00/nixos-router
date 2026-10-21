@@ -1,0 +1,48 @@
+# router-installer
+#
+# Anaconda environment used to build the installable ISO:
+#
+#   sudo image-builder build bootc-installer \
+#     --bootc-ref localhost/router-installer:latest \
+#     --bootc-installer-payload-ref ghcr.io/<owner>/router-bootc:latest \
+#     --bootc-default-fs xfs \
+#     --output-dir ./out
+#
+# The payload (localhost/router-bootc) is embedded into the ISO from the host's
+# rootful containers-storage, so the install itself needs no network. The image
+# type generates its own kickstart and grub entries; nothing here configures
+# them. See https://osbuild.org/docs/developer-guide/projects/image-builder/advanced/bootc/isos/
+FROM quay.io/fedora/fedora-bootc:44
+
+# ── anaconda runtime + the build tools image-builder requires ──
+RUN dnf install -y --setopt=install_weak_deps=False \
+        anaconda anaconda-install-img-deps anaconda-dracut \
+        dracut-config-generic dracut-network net-tools \
+        grub2-efi-x64-cdboot plymouth \
+        default-fonts-core-sans default-fonts-other-sans google-noto-sans-cjk-fonts \
+    && dnf install -y --setopt=install_weak_deps=False \
+        xorrisofs squashfs-tools \
+    && dnf clean all \
+    && rm -rf /var/cache/dnf /var/cache/libdnf5
+
+# ── contract: shim + grub EFI binaries under /boot/efi/EFI/$VENDOR ──
+RUN mkdir -p /boot/efi && cp -ra /usr/lib/efi/*/*/EFI /boot/efi
+
+# ── what lorax normally does to make anaconda boot ──
+RUN echo "install:x:0:0:root:/root:/usr/libexec/anaconda/run-anaconda" >> /etc/passwd \
+    && echo "install::14438:0:99999:7:::" >> /etc/shadow \
+    && passwd -d root \
+    && mv /usr/share/anaconda/list-harddrives-stub /usr/bin/list-harddrives \
+    && mv /etc/yum.repos.d /etc/anaconda.repos.d \
+    && ln -s /lib/systemd/system/anaconda.target /etc/systemd/system/default.target \
+    && rm -v /usr/lib/systemd/system-generators/systemd-gpt-auto-generator \
+    && ln -sf /usr/lib/systemd/system/anaconda-shell@.service /usr/lib/systemd/system/autovt@.service \
+    && mkdir -p /usr/lib/systemd/logind.conf.d \
+    && printf '[Login]\nReserveVT=2\n' > /usr/lib/systemd/logind.conf.d/anaconda-shell.conf \
+    && mkdir -p "$(realpath /root)"
+
+# ── install config, same as the payload's rootfs/usr/lib/bootc/install ──
+RUN mkdir -p /usr/lib/bootc/install \
+    && printf '[install.filesystem.root]\ntype = "xfs"\n' > /usr/lib/bootc/install/00-router.toml
+
+RUN bootc container lint

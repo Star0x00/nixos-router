@@ -13,6 +13,7 @@ on:
 env:
   # OCI references must be lowercase; github.repository preserves the owner's casing
   IMAGE: ghcr.io/${{ github.repository_owner }}/router-bootc
+  INSTALLER_IMAGE: ghcr.io/${{ github.repository_owner }}/router-installer
 
 concurrency:
   group: build-${{ github.ref }}
@@ -33,6 +34,7 @@ jobs:
           podman --version
           # normalize to lowercase in case the owner has uppercase characters
           echo "IMAGE=$(echo "$IMAGE" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
+          echo "INSTALLER_IMAGE=$(echo "$INSTALLER_IMAGE" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
 
       - name: Log in to GHCR
         if: github.event_name != 'pull_request'
@@ -66,5 +68,61 @@ jobs:
             echo "| Image | \`$IMAGE:sha-${GITHUB_SHA::12}\` |"
             echo "| Base | \`quay.io/fedora/fedora-bootc:44\` |"
             echo "| Size | $(podman image inspect --format '{{.Size}}' "$IMAGE:latest" | numfmt --to=iec) |"
+            echo "| Pushed | ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  installer:
+    # Anaconda environment for the installable ISO. The ISO itself is built locally
+    # (it needs root); this job only ships the container:
+    #   sudo image-builder build bootc-installer \
+    #     --bootc-ref "$INSTALLER_IMAGE:latest" \
+    #     --bootc-installer-payload-ref "$IMAGE:latest" \
+    #     --bootc-pull-container --bootc-default-fs xfs --output-dir ./out
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show podman version and image ref
+        run: |
+          podman --version
+          echo "INSTALLER_IMAGE=$(echo "$INSTALLER_IMAGE" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
+
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | podman login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Build installer image
+        run: |
+          podman build \
+            --pull=always \
+            --platform linux/amd64 \
+            -f Containerfile.installer \
+            -t "$INSTALLER_IMAGE:sha-${GITHUB_SHA::12}" \
+            -t "$INSTALLER_IMAGE:latest" \
+            .
+
+      - name: Lint installer image
+        run: podman run --rm "$INSTALLER_IMAGE:latest" bootc container lint
+
+      - name: Push installer image
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        run: |
+          podman push "$INSTALLER_IMAGE:sha-${GITHUB_SHA::12}"
+          podman push "$INSTALLER_IMAGE:latest"
+
+      - name: Write summary
+        run: |
+          {
+            echo '### router-installer'
+            echo
+            echo '| Item | Value |'
+            echo '|---|---|'
+            echo "| Image | \`$INSTALLER_IMAGE:sha-${GITHUB_SHA::12}\` |"
+            echo '| Base | `quay.io/fedora/fedora-bootc:44` + anaconda |'
+            echo "| Size | $(podman image inspect --format '{{.Size}}' "$INSTALLER_IMAGE:latest" | numfmt --to=iec) |"
             echo "| Pushed | ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }} |"
           } >> "$GITHUB_STEP_SUMMARY"

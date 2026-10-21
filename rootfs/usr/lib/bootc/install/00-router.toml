@@ -1,0 +1,7 @@
+# bootc install config: merged by `bootc install` and read by image-builder.
+# Without this, `image-builder build ... bootc-installer` fails with
+# "missing required info: DefaultRootFs".
+# See man bootc-install-config(5).
+
+[install.filesystem.root]
+type = "xfs"
