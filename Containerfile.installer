@@ -5,9 +5,14 @@
 #   FROM   fedora-bootc:rawhide -> :44 (the payload's release)
 #   ks ref quay.io/fedora/fedora-bootc:rawhide -> our payload image
 #
-# Build the ISO (bootc-generic-iso, no injected anaconda/users/lorax/dracut stages):
-#   sudo image-builder build --bootc-ref ghcr.io/star0x00/router-installer:latest \
-#     --bootc-default-fs xfs bootc-generic-iso
+# Build the ISO (bootc-generic-iso, no injected anaconda/users/lorax/dracut stages).
+# The payload image is embedded into the ISO (/var/lib/containers/storage), so the
+# installer works offline; interactive-defaults.ks reads it via containers-storage:.
+#   sudo podman pull ghcr.io/star0x00/router-bootc:latest
+#   sudo image-builder build bootc-generic-iso \
+#     --bootc-ref ghcr.io/star0x00/router-installer:latest \
+#     --bootc-installer-payload-ref ghcr.io/star0x00/router-bootc:latest \
+#     --bootc-default-fs xfs --output-dir ./out
 FROM quay.io/fedora/fedora-bootc:44
 
 RUN dnf install -qy \
