@@ -47,9 +47,16 @@ RUN systemctl mask \
 # their [Install] section makes them start without an explicit enable.
 
 # ── machine identity ──
+# systemd-resolved is masked, so /etc/resolv.conf must be a real file: the base
+# image ships it as a symlink to /run/systemd/resolve/stub-resolv.conf, which is
+# only created by resolved at runtime (a dangling symlink means no resolver).
+# Host queries go through dae's eBPF DNS interception, same as the old NixOS
+# setup; LAN clients get 10.10.10.1 from the DHCP server and dae answers them.
 RUN echo 'router' > /etc/hostname \
     && ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
-    && printf 'LANG=en_US.UTF-8\n' > /etc/locale.conf
+    && printf 'LANG=en_US.UTF-8\n' > /etc/locale.conf \
+    && rm -f /etc/resolv.conf \
+    && printf 'nameserver 223.5.5.5\nnameserver 223.6.6.6\n' > /etc/resolv.conf
 
 # No accounts are created here on purpose: the only login is root via the key in
 # /etc/ssh/authorized_keys/root. Extra accounts are created manually on the

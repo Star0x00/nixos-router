@@ -9,6 +9,8 @@ IPMasquerade=both
 # DHCP server for the LAN (replaces the old kea instance).
 # Pool: 10.10.10.2 - 10.10.10.100, gateway and DNS both point at the router.
 DHCPServer=yes
+
+[DHCPServer]
 PoolOffset=2
 PoolSize=99
 EmitRouter=yes
