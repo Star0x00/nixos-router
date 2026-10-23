@@ -1,0 +1,4 @@
+# Disable SELinux via the kernel command line.
+# bootc applies kargs.d differences to /boot/loader/entries on the next
+# deployment (bootc upgrade/switch), preserving machine-local kargs.
+kargs = ["selinux=0"]
