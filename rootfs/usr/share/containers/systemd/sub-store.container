@@ -1,5 +1,7 @@
 [Unit]
 Description=Sub-Store subscription manager
+After=network-online.target
+Wants=network-online.target
 
 [Container]
 Image=docker.io/xream/sub-store:http-meta
@@ -13,8 +15,6 @@ Environment=TZ=Asia/Shanghai
 
 [Service]
 Restart=always
-After=network-online.target
-Wants=network-online.target
 
 [Install]
 WantedBy=multi-user.target
