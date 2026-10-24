@@ -12,15 +12,15 @@ group {
     # 注意: dae 的 && 是逐节点「与」, 所以多个 name(keyword:) 用 && 会变成
     # 「名字同时含多个关键词」, 几乎必然为空; 要「或」请用 || 或 name(kw1, kw2)。
     cloudflare {
-        filter: subtag(sub_a) && name(keyword: '日本') && name(keyword: 'IEPL')
-        filter: subtag(sub_a) && name(keyword: '香港') && name(keyword: 'IEPL')
+        filter: subtag(sub_a) && name(keyword: '日本')
+        filter: subtag(sub_a) && name(keyword: '香港')
         policy: min_moving_avg
     }
 
     # Google 系: 用 gstatic 探活(和 sing-box 的 Google 一致)。
     google {
-        filter: subtag(sub_a) && name(keyword: '日本') && name(keyword: 'IEPL')
-        filter: subtag(sub_a) && name(keyword: '香港') && name(keyword: 'IEPL')
+        filter: subtag(sub_a) && name(keyword: '日本')
+        filter: subtag(sub_a) && name(keyword: '香港')
         tcp_check_url: 'http://www.gstatic.com/generate_204'
         policy: min_moving_avg
     }
