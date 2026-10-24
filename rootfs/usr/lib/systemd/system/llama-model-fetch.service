@@ -1,0 +1,15 @@
+[Unit]
+Description=Download Hy-MT2 GGUF model for llama-server
+# The model comes from Hugging Face, so it needs both a working link and dae
+# (the transparent proxy) to reach it.
+After=network-online.target dae.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+TimeoutStartSec=30min
+ExecStart=/usr/share/router/bin/llama-fetch-model.sh
+
+[Install]
+WantedBy=multi-user.target

@@ -1,16 +1,17 @@
 [Unit]
 Description=llama.cpp server (Hy-MT2 translation)
-# The model is served from /usr, so it only needs the local filesystem; network
-# ordering is here so the port is announced after the LAN link is up.
-After=network-online.target
+# The model is fetched by llama-model-fetch.service into /var/lib/llama.cpp;
+# without it the server has nothing to load.
+After=network-online.target llama-model-fetch.service
 Wants=network-online.target
+Requires=llama-model-fetch.service
 
 [Container]
 Image=ghcr.io/ggml-org/llama.cpp:server
 ContainerName=llama-server
 # LAN only: nftables drops everything arriving on the WAN interface anyway.
 PublishPort=10.10.10.1:8080:8080
-Volume=/usr/share/llama.cpp:/models:ro
+Volume=/var/lib/llama.cpp:/models:Z
 # Hy-MT2 recommendation for the 1.8B model: temp 0.7 / top_p 0.6 / top_k 20 /
 # repetition_penalty 1.05. --jinja uses the chat template embedded in the GGUF.
 Exec=--model /models/Hy-MT2-1.8B-Q4_K_M.gguf --host 0.0.0.0 --port 8080 --jinja --ctx-size 8192 --threads 6 --alias Hy-MT2-1.8B --temp 0.7 --top-p 0.6 --top-k 20 --repeat-penalty 1.05

@@ -30,17 +30,6 @@ RUN curl -fsSL -o /etc/yum.repos.d/daeuniverse.repo https://daeuniverse.pages.de
 # ── static config ──
 COPY rootfs/ /
 
-# ── Hy-MT2 1.8B translation model (served by llama-server) ──
-# Baked into the image instead of downloaded at boot so the service does not
-# depend on the proxy being healthy. The 1.25bit/2bit variants need unmerged
-# llama.cpp kernels (ggml-org/llama.cpp PR #22836 / #19357), so ship the plain
-# Q4_K_M quant, which loads on the stock llama.cpp:server image.
-RUN mkdir -p /usr/share/llama.cpp \
-    && curl -fL --retry 3 --retry-delay 5 \
-        -o /usr/share/llama.cpp/Hy-MT2-1.8B-Q4_K_M.gguf \
-        https://huggingface.co/tencent/Hy-MT2-1.8B-GGUF/resolve/main/Hy-MT2-1.8B-Q4_K_M.gguf \
-    && chmod 0444 /usr/share/llama.cpp/Hy-MT2-1.8B-Q4_K_M.gguf
-
 # ── enable / mask (bootc cannot start units at build time) ──
 RUN systemctl mask \
         NetworkManager.service \
@@ -53,7 +42,8 @@ RUN systemctl mask \
         sshd.service \
         nftables.service \
         dae.service \
-        dae-reload.timer
+        dae-reload.timer \
+        llama-model-fetch.service
 # Quadlet units under /usr/share/containers/systemd are generated at boot;
 # their [Install] section makes them start without an explicit enable.
 
