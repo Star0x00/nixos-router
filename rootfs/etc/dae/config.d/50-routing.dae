@@ -1,5 +1,7 @@
 routing {
     # ── 基础设施直连(避免回环) ──
+    # sing-box 的出站流量不能被 dae 再抓一次, 否则回环到自己
+    pname(sing-box) -> must_direct
     pname(aardvark-dns) -> must_direct
     pname(systemd-networkd, NetworkManager) -> must_direct
     pname(conmon, netavark) -> must_direct
@@ -46,44 +48,7 @@ routing {
     domain(geosite:category-ai-cn) -> direct
     domain(geosite:category-ntp-cn) -> direct
 
-    # ── 大流量下载 → lxy 订阅(把主订阅 IEPL 的流量省下来) ──
-    #
-    # 容器镜像仓库。geosite:category-container 已覆盖:
-    #   azurecr.io / docker.io / ecr.aws / gcr.io / ghcr.io /
-    #   mcr.microsoft.com / quay.io / registry.gitlab.com / registry.k8s.io
-    # 它没覆盖的 Docker Hub / GHCR blob CDN 等再用 suffix 补上。
-    # ⚠ 这段必须在下面 github 规则之前: geosite:github 也含 ghcr.io 和
-    #   githubusercontent.com, 晚了就会被 github → cloudflare 抢走。
-    domain(geosite:category-container, geosite:flatpak, geosite:nixos, geosite:wallhaven, geosite:fedora) -> lxy
-    domain(suffix: docker.com, docker.io, auth.docker.io,
-           production.cloudflare.docker.com, lscr.io, nvcr.io,
-           public.ecr.aws, pkg-containers.githubusercontent.com,
-	       registry.fedoraproject.org, rpmfusion.org, mirrors.fedoraproject.org) -> lxy
-
-    # 其它大文件下载: 包管理器 / 模型 / GitHub Release。
-    # 不想让这些走 lxy 就整段删掉。
-    domain(suffix: registry.npmjs.org, pypi.org, files.pythonhosted.org,
-           crates.io, static.crates.io, repo1.maven.org,
-           huggingface.co, cdn-lfs.huggingface.co, cdn-lfs.hf.co,
-           objects.githubusercontent.com, release-assets.githubusercontent.com,
-           codeload.github.com) -> lxy
-
-    # ── 代理: 指定服务(对应 singbox-a-base.json 的 route 规则) ──
-    # Google 系 → google 组
-    domain(suffix: gstatic.com) -> google
-    domain(geosite:google, geosite:youtube, geosite:google-deepmind,
-           geosite:google-gemini, geosite:googlefcm, geosite:android,
-           geosite:openai) -> google
-
-    # GitHub / Fedora 系 → cloudflare 组
-    domain(suffix: github.com, githubusercontent.com) -> cloudflare
-    domain(geosite:github) -> cloudflare
-
-    # Meta / AI 系 → japan 组
-    domain(geosite:meta) -> japan
-    domain(suffix: opencode.ai, meta.ai) -> japan
-
-    # ── 代理: 非中国互联网服务兜底 → cloudflare 组 ──
+    # ── 代理: 非中国互联网服务(全部走同一个 proxy 组) ──
     domain(geosite:category-ai-!cn, geosite:category-ai-chat-!cn,
            geosite:category-social-media-!cn, geosite:category-media,
            geosite:category-communication,
@@ -91,7 +56,7 @@ routing {
            geosite:category-cryptocurrency, geosite:category-entertainment,
            geosite:category-anticensorship, geosite:category-scholar-!cn,
            geosite:category-browser-!cn, geosite:category-remote-control,
-           geosite:category-proxy-tunnels, geosite:category-pt) -> cloudflare
+           geosite:category-proxy-tunnels, geosite:category-pt) -> proxy
 
     domain(geosite:category-porn) -> block
 
@@ -103,9 +68,9 @@ routing {
     # ── 禁 QUIC ──
     l4proto(udp) && dport(443) -> block
 
-    # ── UDP 全部直连(保持原行为; 若想让 dae 直接代理 UDP 可删掉这行) ──
+    # ── UDP 全部直连(SOCKS5 接不住 UDP) ──
     l4proto(udp) -> direct
 
-    # ── 其余 TCP 走通用代理组 ──
-    fallback: cloudflare
+    # ── 其余 TCP 走代理 ──
+    fallback: proxy
 }

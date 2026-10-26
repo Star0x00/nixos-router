@@ -2,13 +2,16 @@
 #
 # Topics are split under config.d/; the numeric prefix sets load order:
 #   10-global.dae       global / interfaces / health check
-#   20-subscription.dae Sub-Store subscription (node pool)
+#   20-node.dae         the single outbound (sing-box SOCKS5 on 127.0.0.1:2080)
 #   30-dns.dae          DNS upstreams and routing
-#   40-group.dae        node groups (policies)
-#   50-routing.dae      routing rules
+#   40-group.dae        node groups (one group: proxy)
+#   50-routing.dae      routing rules (direct vs proxy)
 #
 # dae requires included files to live below the entry file's directory,
 # hence the relative path. Runtime entry point is /etc/dae/config.dae.
+#
+# Node pool, latency tests and failover live in sing-box; see
+# /usr/share/router/singbox/base.json and sing-box-update.service.
 
 include {
     config.d/*.dae

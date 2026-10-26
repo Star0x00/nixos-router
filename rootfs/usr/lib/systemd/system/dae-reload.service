@@ -1,8 +1,0 @@
-[Unit]
-Description=Refresh dae subscriptions (smooth reload)
-After=dae.service
-Requires=dae.service
-
-[Service]
-Type=oneshot
-ExecStart=/usr/bin/dae reload

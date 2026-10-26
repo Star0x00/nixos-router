@@ -1,0 +1,10 @@
+[Unit]
+Description=Refresh the sing-box node group from Sub-Store
+
+[Timer]
+OnCalendar=*-*-* 07:00:00
+Persistent=true
+RandomizedDelaySec=10min
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,27 @@
+[Unit]
+Description=sing-box (SOCKS5 outbound for dae)
+Documentation=https://sing-box.sagernet.org/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Node group comes from sing-box-update.service; until config.json exists the
+# process exits and the restart loop retries.
+ExecStart=/usr/bin/sing-box run -C /etc/sing-box
+WorkingDirectory=/var/lib/sing-box
+User=sing-box
+Group=sing-box
+StateDirectory=sing-box
+Restart=always
+RestartSec=10
+LimitNOFILE=1048576
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ReadWritePaths=/var/lib/sing-box
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,11 @@
+[Unit]
+Description=Build sing-box config from the Sub-Store subscription
+After=network-online.target sub-store.service
+Wants=network-online.target sub-store.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/share/router/bin/sing-box-update.sh
+
+[Install]
+WantedBy=multi-user.target

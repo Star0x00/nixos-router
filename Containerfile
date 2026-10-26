@@ -1,8 +1,8 @@
 # fedora-bootc-router
 #
 # Scope so far: installable, bootable, DHCP, SSH, forwarding,
-# plus dae (eBPF transparent proxy), Sub-Store (quadlet container) and the
-# LAN DHCP server (systemd-networkd built-in).
+# plus dae (eBPF transparent proxy) with sing-box as its SOCKS5 outbound,
+# Sub-Store (quadlet container) and the LAN DHCP server (systemd-networkd).
 # forgejo / remaining containers come later.
 #
 # Rule: static config goes in /usr; only machine-local state belongs in /etc.
@@ -16,6 +16,7 @@ RUN dnf -y install --setopt=install_weak_deps=False \
         jq curl wget iproute iputils tcpdump bind-utils \
         tar rsync vim-enhanced less \
         podman glibc-langpack-en sudo \
+        nodejs \
     && dnf clean all \
     && rm -rf /var/cache/dnf /var/cache/libdnf5
 
@@ -27,8 +28,29 @@ RUN curl -fsSL -o /etc/yum.repos.d/daeuniverse.repo https://daeuniverse.pages.de
     && dnf clean all \
     && rm -rf /var/cache/dnf /var/cache/libdnf5
 
+# ── sing-box: SOCKS5 outbound for dae ──
+# Not packaged in Fedora, so take the upstream static binary. sing-box owns the
+# node pool / urltest / failover; dae only decides direct vs proxy.
+ARG SINGBOX_VERSION=1.14.4
+RUN set -eux; \
+    case "$(uname -m)" in \
+        x86_64) arch=amd64 ;; \
+        aarch64) arch=arm64 ;; \
+        *) echo "unsupported arch: $(uname -m)" >&2; exit 1 ;; \
+    esac; \
+    name="sing-box-${SINGBOX_VERSION}-linux-${arch}"; \
+    curl -fsSL -o /tmp/sing-box.tar.gz \
+        "https://github.com/SagerNet/sing-box/releases/download/v${SINGBOX_VERSION}/${name}.tar.gz"; \
+    tar -xzf /tmp/sing-box.tar.gz -C /tmp; \
+    install -m 0755 "/tmp/${name}/sing-box" /usr/bin/sing-box; \
+    rm -rf /tmp/sing-box.tar.gz "/tmp/${name}"; \
+    /usr/bin/sing-box version
+
 # ── static config ──
 COPY rootfs/ /
+
+# dae refuses configs that are group-writable or readable by others (0640 max).
+RUN chmod 0640 /etc/dae/config.dae /etc/dae/config.d/*.dae
 
 # ── enable / mask (bootc cannot start units at build time) ──
 RUN systemctl mask \
@@ -41,8 +63,10 @@ RUN systemctl mask \
         systemd-networkd-wait-online.service \
         sshd.service \
         nftables.service \
+        sing-box.service \
+        sing-box-update.service \
+        sing-box-update.timer \
         dae.service \
-        dae-reload.timer \
         llama-model-fetch.service
 # Quadlet units under /usr/share/containers/systemd are generated at boot;
 # their [Install] section makes them start without an explicit enable.
