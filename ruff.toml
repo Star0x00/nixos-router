@@ -1,0 +1,37 @@
+# Python lint settings for the helper scripts under rootfs/.
+target-version = "py314"
+line-length = 100
+
+[lint]
+select = [
+    "E", "W", "F",      # pycodestyle / pyflakes
+    "I",                # import order
+    "N",                # naming
+    "UP",               # pyupgrade
+    "B",                # bugbear
+    "SIM",              # simplify
+    "PL",               # pylint
+    "RUF",
+    "D",                # docstrings
+    "ANN",              # annotations
+    "PTH",              # pathlib
+    "C4",               # comprehensions
+    "RET",              # return statements
+    "ARG",              # unused arguments
+    "PERF",
+    "S",                # bandit
+    "TRY",
+    "EM",
+    "LOG",
+    "G",                # logging format
+]
+ignore = [
+    "D203",     # conflicts with D211
+    "D212",     # conflicts with D213
+    "D213",
+    "EM101",    # short exception messages are fine here
+    "EM102",
+    "TRY003",
+    "PLR2004",  # magic values are explicit constants here
+    "COM812",   # conflicts with the formatter
+]

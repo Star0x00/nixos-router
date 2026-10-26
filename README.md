@@ -23,12 +23,13 @@ rootfs/                     # copied verbatim onto / (static config prefers /usr
   etc/containers/           # registries.conf.d (insecure LAN registry)
   usr/share/containers/systemd/  # quadlet units (sub-store, llama-server)
   usr/share/router/dae/     # dae asset seeding script
-  usr/share/router/sing-box/# sing-box: base.json, gen-singbox-base.mjs, update.sh
+  usr/share/router/sing-box/# sing-box: base.json + update.py
   usr/share/router/llama/   # model fetch script
   usr/share/router/nftables/# nftables.conf
-  usr/lib/systemd/system/   # unit drop-ins, sing-box update service/timer
+  usr/lib/systemd/system/   # units + drop-ins (sing-box, dae, nftables, sshd)
   usr/lib/sysusers.d/       # sing-box system user
 archive/                    # previous NixOS repo (reference only, not built)
+ruff.toml, pyrightconfig.json # lint/type-check config for the Python helpers
 ```
 
 ## Proxy chain
@@ -47,13 +48,20 @@ LAN/host traffic -> dae (eBPF, direct vs proxy)
 dae decides direct vs proxy (geosite/geoip rules). sing-box holds the whole
 node pool from Sub-Store, picks the lowest-latency node on its own, and has no
 routing rules of its own (`route.final` = its single selector group). The
-groups only decide which node is used and can be switched from the sing-box
-dashboard on `http://10.10.10.1:9090`.
+groups only decide which node is used. sing-box exposes a Clash API on
+`http://10.10.10.1:9090` (`/version`, `/proxies`, `/configs`), with the
+metacubexd UI served at `http://10.10.10.1:9090/ui/`.
 
-- `sing-box-update.service` (boot, plus the `sing-box-update.timer` at 07:00)
-  downloads the subscription, runs `gen-singbox-base.mjs` to rewrite
-  `outbounds`, validates with `sing-box check`, and only then swaps
-  `/etc/sing-box/config.json` and restarts sing-box if it changed.
+- `sing-box.service` has no companion update unit: its `ExecStartPre` runs
+  `uv run --no-project /usr/share/router/sing-box/update.py --no-restart`,
+  which downloads the subscription, regenerates `outbounds`, validates with
+  `sing-box check`, and swaps `/etc/sing-box/config.json` only if it changed.
+  `RuntimeMaxSec=86400` restarts the service once a day, which re-runs that
+  refresh. A failed download keeps the previous config.
+- `update.py` is a PEP 723 script (`requires-python = ">=3.14"`, no third-party
+  deps), run by the `uv` package from Fedora. It uses the system Python 3.14 and
+  only downloads an interpreter into `/var/lib/sing-box/uv-python` when none is
+  available. By hand it also restarts sing-box (`--no-restart` skips that).
 - The NixOS-era A/B split (socks5 2080 local + 2081 LAN) and the dae-side
   Google/Cloudflare/Japan/lxy groups are gone: one instance, one proxy group.
 
@@ -116,15 +124,16 @@ Stage 1 done. Stage 2 skeleton config is written but **not yet build-verified**.
 
 - Static config lives in `/usr`; only machine-local state belongs in `/etc`
   (bootc does a 3-way merge for `/etc` on upgrades). The generated
-  `/etc/sing-box/{node,config}.json` is machine-local by design.
+  `/etc/sing-box/config.json` is machine-local by design.
 - dae rejects config files that are group-writable or readable by others; the
   Containerfile chmods `/etc/dae/**.dae` to `0640` (the repo files are `0644`).
-- `gen-singbox-base.mjs` can be run by hand:
-  `node rootfs/usr/share/router/sing-box/gen-singbox-base.mjs <url|node.json> \`
-  `rootfs/usr/share/router/sing-box/base.json /tmp/config.json`
-- `sing-box/update.sh` pulls the subscription from `http://10.10.10.1:3001/...`
-  (the Sub-Store container's published port) and restarts only sing-box; dae is
-  untouched because its single node never changes.
+- `sing-box/update.py` pulls the subscription from `http://10.10.10.1:3001/...`
+  (the Sub-Store container's published port), waits up to 2 min for Sub-Store at
+  boot, and restarts only sing-box; dae is untouched because its single node
+  never changes. Manual run: `uv run rootfs/usr/share/router/sing-box/update.py`
+  (paths and the subscription URL are constants at the top of the script).
+- `update.py` drops `tls.certificate_sha256` (a mihomo-only pin field) because
+  sing-box refuses the whole config over it.
 - The initramfs is generated at build time; rerun `dracut` after touching its config.
 - Fedora defaults to NetworkManager/firewalld here; both are masked in favour of
   systemd-networkd + nftables.

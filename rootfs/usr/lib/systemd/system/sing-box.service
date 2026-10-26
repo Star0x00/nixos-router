@@ -6,13 +6,24 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-# Node group comes from sing-box-update.service; until config.json exists the
-# process exits and the restart loop retries.
-ExecStart=/usr/bin/sing-box run -C /etc/sing-box
+# Refresh the node groups on every start (and every 24h via RuntimeMaxSec).
+# The "+" prefix runs it as root: the unit itself is unprivileged, but the
+# script writes /etc/sing-box and restarts nothing.
+Environment=HOME=/var/lib/sing-box
+Environment=UV_CACHE_DIR=/var/lib/sing-box/uv-cache
+# If the system has no Python >= 3.14, uv downloads one here on first run.
+Environment=UV_PYTHON_INSTALL_DIR=/var/lib/sing-box/uv-python
+Environment=UV_NO_PROGRESS=1
+ExecStartPre=+/usr/bin/uv run --no-project /usr/share/router/sing-box/update.py --no-restart
+ExecStart=/usr/bin/sing-box run -c /etc/sing-box/config.json
 WorkingDirectory=/var/lib/sing-box
 User=sing-box
 Group=sing-box
 StateDirectory=sing-box
+# Restart every 24h so a subscription that changed without changing any node
+# latency still gets picked up; the restart re-runs the refresh script.
+RuntimeMaxSec=86400
+TimeoutStartSec=300
 Restart=always
 RestartSec=10
 LimitNOFILE=1048576
@@ -20,7 +31,7 @@ NoNewPrivileges=yes
 ProtectSystem=strict
 ProtectHome=yes
 PrivateTmp=yes
-ReadWritePaths=/var/lib/sing-box
+ReadWritePaths=/var/lib/sing-box /etc/sing-box
 RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
 
 [Install]

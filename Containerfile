@@ -16,7 +16,7 @@ RUN dnf -y install --setopt=install_weak_deps=False \
         jq curl wget iproute iputils tcpdump bind-utils \
         tar rsync vim-enhanced less \
         podman glibc-langpack-en sudo \
-        nodejs \
+        uv \
     && dnf clean all \
     && rm -rf /var/cache/dnf /var/cache/libdnf5
 
@@ -64,8 +64,6 @@ RUN systemctl mask \
         sshd.service \
         nftables.service \
         sing-box.service \
-        sing-box-update.service \
-        sing-box-update.timer \
         dae.service \
         llama-model-fetch.service
 # Quadlet units under /usr/share/containers/systemd are generated at boot;
