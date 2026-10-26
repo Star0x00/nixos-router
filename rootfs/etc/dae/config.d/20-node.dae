@@ -1,7 +1,10 @@
-# 节点: 唯一的一个代理出口, 即本机 sing-box 开在 127.0.0.1:2080 的 SOCKS5。
+# Node: the only proxy outbound, the local SOCKS5 that sing-box listens on at
+# 127.0.0.1:2080.
 #
-# dae 只负责 eBPF 拦截 + 直连/代理两分, 节点池、延迟测速、故障切换全部由
-# sing-box 处理(订阅由 sing-box.service 的 ExecStartPre 每天从 Sub-Store 刷一次)。
+# dae only does eBPF interception plus the direct/proxy decision. The node pool,
+# latency tests and failover all live in sing-box, which refreshes them from
+# Sub-Store on every start (see sing-box.service ExecStartPre). The old A/B pair
+# (socks5 2080 for the host, 2081 for the LAN) is merged into this one.
 node {
     'socks5://127.0.0.1:2080'
 }

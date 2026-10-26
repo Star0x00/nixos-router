@@ -1,8 +1,8 @@
-# 节点组(策略)。
+# Node groups (policies).
 #
-# 只有一个代理组, 对应 node 段里唯一的 SOCKS5 出口。
-# fixed(0) = 固定用第 0 个节点; 这里实际只有一个, 选节点由 sing-box 的
-# urltest 组自己按延迟完成, dae 不做任何多组分流。
+# There is exactly one proxy group, bound to the single SOCKS5 node above.
+# fixed(0) = always use node 0, which is the only one; picking a real node is
+# sing-box's urltest group's job, dae does no multi-group splitting.
 group {
     proxy {
         policy: fixed(0)

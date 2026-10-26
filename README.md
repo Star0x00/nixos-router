@@ -134,6 +134,9 @@ Stage 1 done. Stage 2 skeleton config is written but **not yet build-verified**.
   (paths and the subscription URL are constants at the top of the script).
 - `update.py` drops `tls.certificate_sha256` (a mihomo-only pin field) because
   sing-box refuses the whole config over it.
+- `update.py` also renames nodes by region in subscription order (`香港01`,
+  `香港02`, `日本01` …; `HK`/`JP`/`US`/emoji 等关键词都认, 见 `REGIONS`)，没识别出
+  地区的节点保持原名；重命名后重名的只保留第一个。
 - The initramfs is generated at build time; rerun `dracut` after touching its config.
 - Fedora defaults to NetworkManager/firewalld here; both are masked in favour of
   systemd-networkd + nftables.

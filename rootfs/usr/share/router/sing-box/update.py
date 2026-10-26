@@ -7,9 +7,9 @@
 
 Restored from the NixOS setup (sing-box.nix + gen-singbox-base.mjs):
 
-    🚀 节点选择    selector  [🚀 Cloudflare, ♻️ 自动选择, <每个节点>]  默认 🚀 Cloudflare
-    🚀 Cloudflare  urltest   全部节点 (cp.cloudflare.com 测速)
-    ♻️ 自动选择    urltest   全部节点 (gstatic 测速)
+    🚀 节点选择    selector  [🚀 Cloudflare, ♻️ 自动选择, <every node>]  default 🚀 Cloudflare
+    🚀 Cloudflare  urltest   all nodes, tested against cp.cloudflare.com
+    ♻️ 自动选择    urltest   all nodes, tested against gstatic
     direct / block
 
 dae decides direct vs proxy; these groups only pick a node. The config is
@@ -23,6 +23,7 @@ import grp
 import json
 import logging
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -39,7 +40,25 @@ SING_BOX, SYSTEMCTL, GROUP = "/usr/bin/sing-box", "/usr/bin/systemctl", "sing-bo
 
 PROXY_TAG, CF_TAG, AUTO_TAG = "🚀 节点选择", "🚀 Cloudflare", "♻️ 自动选择"
 GROUP_TYPES = {"selector", "urltest", "direct", "block", "dns"}
+# Non-node lines some subscriptions carry ("剩余流量: ...", "套餐到期: ...").
 JUNK = ("剩余", "到期")
+
+# Region detection: a node whose name matches a keyword is renamed to
+# "<region><NN>" in subscription order. Unmatched nodes keep their name.
+REGIONS: tuple[tuple[str, str], ...] = (
+    ("香港", r"香港|🇭🇰|(?<![A-Za-z])(?:HK|HKG|Hong\s*Kong)(?![A-Za-z])"),
+    ("台湾", r"台湾|台灣|🇹🇼|(?<![A-Za-z])(?:TW|TWN|Taiwan)(?![A-Za-z])"),
+    ("日本", r"日本|东京|大阪|🇯🇵|(?<![A-Za-z])(?:JP|JPN|Japan|Tokyo|Osaka)(?![A-Za-z])"),
+    ("韩国", r"韩国|韓國|首尔|🇰🇷|(?<![A-Za-z])(?:KR|KOR|Korea|Seoul)(?![A-Za-z])"),
+    ("新加坡", r"新加坡|狮城|獅城|🇸🇬|(?<![A-Za-z])(?:SG|SGP|Singapore)(?![A-Za-z])"),
+    ("美国", r"美国|美國|🇺🇸|(?<![A-Za-z])(?:US|USA|United\s*States|America)(?![A-Za-z])"),
+    ("英国", r"英国|英國|伦敦|🇬🇧|(?<![A-Za-z])(?:UK|GBR|Britain|London)(?![A-Za-z])"),
+    ("德国", r"德国|德國|法兰克福|🇩🇪|(?<![A-Za-z])(?:DE|DEU|Germany|Frankfurt)(?![A-Za-z])"),
+    ("法国", r"法国|法國|巴黎|🇫🇷|(?<![A-Za-z])(?:FR|FRA|France|Paris)(?![A-Za-z])"),
+    ("土耳其", r"土耳其|🇹🇷|(?<![A-Za-z])(?:TR|TUR|Turkey)(?![A-Za-z])"),
+    ("泰国", r"泰国|泰國|🇹🇭|(?<![A-Za-z])(?:TH|THA|Thailand)(?![A-Za-z])"),
+    ("越南", r"越南|🇻🇳|(?<![A-Za-z])(?:VN|VNM|Vietnam)(?![A-Za-z])"),
+)
 
 log = logging.getLogger("sing-box-update")
 
@@ -57,7 +76,7 @@ def get(url: str, timeout: float, attempts: int = 1) -> bytes:
                 return body
         except OSError as error:
             if attempt == attempts - 1:
-                msg = "网络请求失败"
+                msg = "request failed"
                 raise RefreshError(msg) from error
             time.sleep(5)
     raise AssertionError
@@ -72,8 +91,20 @@ def wait_for_substore() -> None:
             time.sleep(2)
         else:
             return
-    msg = "Sub-Store 未就绪"
+    msg = "Sub-Store not ready"
     raise RefreshError(msg)
+
+
+def rename_by_region(nodes: list[dict[str, Any]]) -> None:
+    """Rename nodes to 香港01 / 日本02 ... in subscription order."""
+    counters: dict[str, int] = {}
+    for node in nodes:
+        name = node["tag"]
+        for region, pattern in REGIONS:
+            if re.search(pattern, name, re.IGNORECASE):
+                counters[region] = counters.get(region, 0) + 1
+                node["tag"] = f"{region}{counters[region]:02d}"
+                break
 
 
 def urltest(tag: str, nodes: list[str], url: str) -> dict[str, Any]:
@@ -91,25 +122,28 @@ def urltest(tag: str, nodes: list[str], url: str) -> dict[str, Any]:
 
 def build_config(sub: dict[str, Any], template: dict[str, Any]) -> tuple[dict[str, Any], int]:
     """Return (config, pinned-field count)."""
-    nodes: dict[str, dict[str, Any]] = {}
+    found: dict[str, dict[str, Any]] = {}
     for node in sub.get("outbounds") or []:
         tag = node.get("tag", "")
         if tag and node.get("type") not in GROUP_TYPES and not any(j in tag for j in JUNK):
-            nodes.setdefault(tag, node)
-    if not nodes:
-        msg = "订阅里没有节点"
+            found.setdefault(tag, node)
+    if not found:
+        msg = "subscription has no nodes"
         raise RefreshError(msg)
 
     pinned = 0
-    for node in nodes.values():
+    for node in found.values():
         tls = node.get("tls")
         # Sub-Store passes mihomo's pin field through; sing-box rejects the whole
         # config over it, and these nodes also set "insecure": true.
         if isinstance(tls, dict) and tls.pop("certificate_sha256", None) is not None:
             pinned += 1
 
+    rename_by_region(list(found.values()))
+    # Renaming can still collide (two unmatched nodes with the same name), so
+    # keep only the first of each.
+    nodes = {node["tag"]: node for node in found.values()}
     tags = list(nodes)
-    config = json.loads(json.dumps(template))
     outbounds = [
         {
             "type": "selector",
@@ -124,12 +158,13 @@ def build_config(sub: dict[str, Any], template: dict[str, Any]) -> tuple[dict[st
         {"type": "block", "tag": "block"},
         *nodes.values(),
     ]
+    config = json.loads(json.dumps(template))
     config.update(outbounds=outbounds, route={**template.get("route", {}), "final": PROXY_TAG})
 
     # `sing-box check` does not catch dangling references, so do it here.
     refs = {tag for out in outbounds for tag in out.get("outbounds", [])}
     if missing := refs - {out["tag"] for out in outbounds}:
-        msg = f"悬空引用: {sorted(missing)[0]}"
+        msg = f"dangling outbound: {sorted(missing)[0]}"
         raise RefreshError(msg)
 
     return config, pinned
@@ -141,7 +176,7 @@ def check(path: Path) -> None:
         [SING_BOX, "check", "-c", str(path)], capture_output=True, check=False
     )
     if result.returncode:
-        msg = "sing-box 校验失败"
+        msg = "sing-box check failed"
         raise RefreshError(msg)
 
 
@@ -183,18 +218,18 @@ def main() -> int:
     except (RefreshError, ValueError, OSError) as error:
         # Never break a working daemon over a failed refresh.
         if CONFIG_FILE.exists():
-            log.error("%s, 沿用现有配置", error)  # noqa: TRY400
+            log.error("%s; keeping the existing config", error)  # noqa: TRY400
             return 0
-        log.error("%s, 且没有可用配置", error)  # noqa: TRY400
+        log.error("%s; no usable config", error)  # noqa: TRY400
         return 1
 
     if not install(payload):
-        log.info("配置未变化, 不重启")
+        log.info("config unchanged, not restarting")
         return 0
 
-    log.info("已更新 %s", CONFIG_FILE)
+    log.info("wrote %s", CONFIG_FILE)
     if pinned:
-        log.info("移除了 %d 个节点的 tls.certificate_sha256", pinned)
+        log.info("dropped tls.certificate_sha256 from %d nodes", pinned)
 
     if "--no-restart" not in sys.argv:
         # --no-block: as ExecStartPre sing-box is not running yet, and waiting

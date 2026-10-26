@@ -11,7 +11,7 @@ global {
     allow_insecure: false
     auto_config_kernel_parameter: true
 
-    # 不和 netavark (0x2000) 冲突
+    # Must not collide with netavark (0x2000).
     so_mark_from_dae: 0x1000
 
     fallback_resolver: '223.5.5.5:53'

@@ -6,23 +6,25 @@ dns {
   }
   routing {
     request {
-      # 禁用 HTTPS/SVCB 记录(qtype 65): 它会携带 ECH, 导致
-      # 客户端用加密的 ClientHello, dae 嗅探不到 SNI, 影响域名分流。
-      # 拒绝后客户端会回退到 A/AAAA 查询。
+      # Drop HTTPS/SVCB records (qtype 65): they carry ECH, so clients send an
+      # encrypted ClientHello, dae cannot sniff the SNI, and domain-based
+      # routing breaks. Clients fall back to A/AAAA queries.
       qtype(https) -> reject
 
-      # 广告拦截：匹配广告域名直接拒绝
+      # Ad blocking: reject known ad domains.
       qname(geosite:category-ads-all) -> reject
-      # 中国域名走 alidns 直连
+      # Chinese domains resolve through alidns directly.
       qname(geosite:cn) -> alidns
-      # 其余域名走 alidns 直连（支持 ECS，海外 CDN 也能拿到较近节点）
-      # 如果被污染，response routing 会自动换 cfdns 重查
+      # Everything else also goes to alidns (it supports ECS, so overseas CDNs
+      # still return a nearby node). Poisoned answers are re-queried via cfdns
+      # by the response routing below.
       fallback: alidns
     }
     response {
       upstream(cfdns) -> accept
       upstream(googledns) -> accept
-      # 非中国域名返回私有 IP → DNS 污染，重新用 cfdns 查询
+      # A non-Chinese name resolving to a private IP means DNS poisoning:
+      # ask cfdns again.
       !qname(geosite:cn) && ip(geoip:private) -> cfdns
       fallback: accept
     }
