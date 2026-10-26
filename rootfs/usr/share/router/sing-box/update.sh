@@ -3,16 +3,18 @@
 #
 # Restored from the NixOS setup (services/deprecated/sing-box.nix +
 # assets/gen-singbox-base.mjs): download the subscription, regenerate the node
-# group from it, validate, and only then replace the live config.
+# groups from it, validate, and only then replace the live config.
 #
 # Everything is downloaded/generated into /run first, so a Sub-Store that is
 # not up yet (or a broken subscription) cannot truncate the working config.
 set -euo pipefail
 
+here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 dir=/etc/sing-box
-template=/usr/share/router/singbox/base.json
-gen=/usr/share/router/lib/gen-singbox-base.mjs
-url='http://127.0.0.1:3001/qwerhyy123/download/collection/singbox?target=sing-box'
+template="$here/base.json"
+gen="$here/gen-singbox-base.mjs"
+# Sub-Store is reachable on the LAN address; the container publishes 3001 there.
+url='http://10.10.10.1:3001/qwerhyy123/download/collection/singbox?target=sing-box'
 
 node_json=/run/sing-box-node.json
 config_new=/run/sing-box-config.json
@@ -32,6 +34,8 @@ fi
 install -m 0640 -o root -g sing-box "$node_json" "$dir/node.json"
 install -m 0640 -o root -g sing-box "$config_new" "$dir/config.json"
 
+# Only sing-box is restarted. dae has a single fixed node (socks5://127.0.0.1:2080),
+# so its data plane / config never changes when the subscription does.
 # --no-block: this unit is ordered before sing-box.service, so waiting for the
 # restart job would deadlock at boot.
 systemctl --no-block try-restart sing-box.service || true

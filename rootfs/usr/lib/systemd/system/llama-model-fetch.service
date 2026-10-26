@@ -9,7 +9,7 @@ Wants=network-online.target
 Type=oneshot
 RemainAfterExit=yes
 TimeoutStartSec=30min
-ExecStart=/usr/share/router/bin/llama-fetch-model.sh
+ExecStart=/usr/share/router/llama/fetch-model.sh
 
 [Install]
 WantedBy=multi-user.target

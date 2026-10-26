@@ -22,9 +22,10 @@ rootfs/                     # copied verbatim onto / (static config prefers /usr
   etc/dae/                  # dae entry config + config.d fragments (0640)
   etc/containers/           # registries.conf.d (insecure LAN registry)
   usr/share/containers/systemd/  # quadlet units (sub-store, llama-server)
-  usr/share/router/bin/     # helper scripts (dae asset seeding, sing-box update)
-  usr/share/router/lib/     # gen-singbox-base.mjs (subscription -> node group)
-  usr/share/router/singbox/ # sing-box base.json template
+  usr/share/router/dae/     # dae asset seeding script
+  usr/share/router/sing-box/# sing-box: base.json, gen-singbox-base.mjs, update.sh
+  usr/share/router/llama/   # model fetch script
+  usr/share/router/nftables/# nftables.conf
   usr/lib/systemd/system/   # unit drop-ins, sing-box update service/timer
   usr/lib/sysusers.d/       # sing-box system user
 archive/                    # previous NixOS repo (reference only, not built)
@@ -119,8 +120,11 @@ Stage 1 done. Stage 2 skeleton config is written but **not yet build-verified**.
 - dae rejects config files that are group-writable or readable by others; the
   Containerfile chmods `/etc/dae/**.dae` to `0640` (the repo files are `0644`).
 - `gen-singbox-base.mjs` can be run by hand:
-  `node rootfs/usr/share/router/lib/gen-singbox-base.mjs <url|node.json> \`
-  `rootfs/usr/share/router/singbox/base.json /tmp/config.json`
+  `node rootfs/usr/share/router/sing-box/gen-singbox-base.mjs <url|node.json> \`
+  `rootfs/usr/share/router/sing-box/base.json /tmp/config.json`
+- `sing-box/update.sh` pulls the subscription from `http://10.10.10.1:3001/...`
+  (the Sub-Store container's published port) and restarts only sing-box; dae is
+  untouched because its single node never changes.
 - The initramfs is generated at build time; rerun `dracut` after touching its config.
 - Fedora defaults to NetworkManager/firewalld here; both are masked in favour of
   systemd-networkd + nftables.

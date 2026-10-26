@@ -5,7 +5,7 @@ Wants=network-online.target sub-store.service
 
 [Service]
 Type=oneshot
-ExecStart=/usr/share/router/bin/sing-box-update.sh
+ExecStart=/usr/share/router/sing-box/update.sh
 
 [Install]
 WantedBy=multi-user.target

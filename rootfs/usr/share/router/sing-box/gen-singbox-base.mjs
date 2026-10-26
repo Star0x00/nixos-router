@@ -18,12 +18,12 @@
 //   node gen-singbox-base.mjs <subscription-url|node.json> [template.json] [output.json]
 //
 //   <源>      订阅 URL, 或已下载的 node.json 本地路径
-//   template  静态 base(只取其 outbounds 以外的部分), 默认 ../singbox/base.json
+//   template  静态 base(只取其 outbounds 以外的部分), 默认同目录 base.json
 //   output    输出文件, 默认与 template 相同(就地重写; 运行时务必显式给 output)
 //
-// 路由器上的调用(见 bin/sing-box-update.sh):
+// 路由器上的调用(见同目录 update.sh):
 //   node gen-singbox-base.mjs /etc/sing-box/node.json \
-//     /usr/share/router/singbox/base.json /etc/sing-box/config.json
+//     /usr/share/router/sing-box/base.json /etc/sing-box/config.json
 
 import { readFileSync, writeFileSync, rmSync } from "node:fs";
 import { dirname, resolve } from "node:path";
@@ -53,7 +53,7 @@ if (args.length < 1) {
   process.exit(2);
 }
 const source = args[0];
-const template = resolve(args[1] ?? resolve(HERE, "../singbox/base.json"));
+const template = resolve(args[1] ?? resolve(HERE, "base.json"));
 const target = resolve(args[2] ?? template);
 
 let sub;
