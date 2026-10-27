@@ -18,13 +18,13 @@ This repository has a container that can become my homelab server in charge of n
 ```text
 ├── .github
 │   └── workflows
-│       └── build.yml                              # CI: build + lint + push to GHCR
-├── rootfs                                         # copied verbatim onto /
+│       └── build.yml                                       # CI: build + lint + push to GHCR
+├── rootfs                                                  # copied verbatim onto /
 │   ├── etc
 │   │   ├── containers
-│   │   │   └── registries.conf.d                  # container registries
-│   │   │       └── 10-router.conf                 # local registries
-│   │   ├── dae                                    # dae config
+│   │   │   └── registries.conf.d                           # container registries
+│   │   │       └── 10-forgejo-insecure-registry.conf       # allow the LAN Forgejo registry over HTTP
+│   │   ├── dae                                             # dae config
 │   │   │   ├── config.d
 │   │   │   │   ├── 10-global.dae
 │   │   │   │   ├── 20-node.dae
@@ -33,63 +33,57 @@ This repository has a container that can become my homelab server in charge of n
 │   │   │   │   └── 50-routing.dae
 │   │   │   └── config.dae
 │   │   └── ssh
-│   │       ├── authorized_keys                    # ssh key
+│   │       ├── authorized_keys                             # ssh key
 │   │       │   └── root
-│   │       └── sshd_config.d                      # ssh config
-│   │           └── 10-router.conf
+│   │       └── sshd_config.d                               # ssh config
+│   │           └── 10-lan-only-key-auth.conf               # listen on LAN, root key-only
 │   └── usr
 │       ├── lib
 │       │   ├── bootc
-│       │   │   └── kargs.d                        # kernel args
-│       │   │       └── 50-selinux.toml            # ban selinux
+│       │   │   └── kargs.d                                 # kernel args
+│       │   │       └── 50-selinux.toml                     # disable SELinux
 │       │   ├── dracut
 │       │   │   └── dracut.conf.d
-│       │   │       └── 50-router-modules.conf     # pull r8152 into the initrd early
+│       │   │       └── 50-r8152-usb-nic.conf               # load r8152 in the initrd
 │       │   ├── modprobe.d
-│       │   │   └── 99-router.conf                 # ban r8153_ecm
+│       │   │   └── 99-blacklist-r8153-ecm.conf             # disable conflicting r8153_ecm
 │       │   ├── sysctl.d
-│       │   │   └── 90-router.conf                 # enable forwarding
+│       │   │   └── 90-ip-forwarding.conf                   # enable IPv4 forwarding
 │       │   ├── systemd
-│       │   │   ├── network                        # systemd-networkd
-│       │   │   │   ├── 10-lan.network             # lan config
-│       │   │   │   └── 10-wan.network             # wan config
-│       │   │   └── system                         # systemd service units
+│       │   │   ├── network                                 # systemd-networkd
+│       │   │   │   ├── 10-lan.network                      # LAN address + DHCP server
+│       │   │   │   └── 10-wan.network                      # WAN DHCP client
+│       │   │   └── system                                  # systemd service units
 │       │   │       ├── dae.service.d
-│       │   │       │   └── 10-router.conf         # dae geoip/geosite
+│       │   │       │   └── 10-sing-box-and-assets.conf     # start after sing-box, seed assets
 │       │   │       ├── nftables.service.d
-│       │   │       │   └── 10-router-conf.conf    # refresh and enable nft rules
+│       │   │       │   └── 10-use-local-rules.conf         # load the rules shipped in the image
 │       │   │       ├── sshd.service.d
-│       │   │       │   └── 10-router-lan.conf     # ssh bind to lan
-│       │   │       ├── llama-model-fetch.service  # pull Hy-MT2 GGUF
-│       │   │       └── sing-box.service           # sing-box service
-│       │   ├── sysusers.d                         # create user
-│       │   │   └── sing-box.conf                  # sing-box user and group
-│       │   ├── tmpfiles.d                         # systemd-tmpfiles
-│       │   │   └── router.conf                    # create dir
-│       │   └── udev                               # device
-│       │       └── rules.d                        # rules
-│       │           └── 90-usb-nic-power.rules     # keep usb work
+│       │   │       │   └── 10-wait-lan-device.conf         # wait for the LAN NIC before binding
+│       │   │       ├── llama-model-fetch.service           # pull Hy-MT2 GGUF
+│       │   │       └── sing-box.service                    # sing-box service
+│       │   ├── sysusers.d                                  # create user
+│       │   │   └── sing-box.conf                           # sing-box user and group
+│       │   ├── tmpfiles.d                                  # systemd-tmpfiles
+│       │   │   └── 10-persistent-state-dirs.conf           # create /var state dirs
+│       │   └── udev                                        # device
+│       │       └── rules.d                                 # rules
+│       │           └── 90-usb-nic-power.rules              # keep USB NICs from autosuspending
 │       └── share
-│           ├── containers                         # containers
-│           │   └── systemd                        # podman quadlets
-│           │       ├── llama-server.container     # llama translate service
-│           │       └── sub-store.container        # sub-store
-│           └── router                             # scripts
+│           ├── containers                                  # containers
+│           │   └── systemd                                 # podman quadlets
+│           │       ├── llama-server.container              # llama translate service
+│           │       └── sub-store.container                 # sub-store
+│           └── network-services                            # static assets/scripts used by the network services
 │               ├── dae
-│               │   └── seed-assets.sh             # cp dae geoip/geosite to /var
+│               │   └── seed-assets.sh                      # cp dae geoip/geosite to /var
 │               ├── llama
-│               │   └── fetch-model.sh             # download models
+│               │   └── fetch-model.sh                      # download models
 │               ├── nftables
-│               │   └── nftables.conf              # nftables rules
+│               │   └── nftables.conf                       # nftables rules
 │               └── sing-box
-│                   ├── base.json                  # sing-box config template
-│                   └── update.py                  # node update script
-├── .gitignore
-├── Containerfile                                  # main
-├── justfile                                       # just command
-├── pyrightconfig.json
-├── README.md
-└── ruff.toml
+│                   ├── base.json                           # sing-box config template
+│                   └── update.py                           # node update script
 ```
 
 ## Service

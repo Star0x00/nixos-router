@@ -14,7 +14,7 @@ Environment=UV_CACHE_DIR=/var/lib/sing-box/uv-cache
 # If the system has no Python >= 3.14, uv downloads one here on first run.
 Environment=UV_PYTHON_INSTALL_DIR=/var/lib/sing-box/uv-python
 Environment=UV_NO_PROGRESS=1
-ExecStartPre=+/usr/bin/uv run --no-project /usr/share/router/sing-box/update.py --no-restart
+ExecStartPre=+/usr/bin/uv run --no-project /usr/share/network-services/sing-box/update.py --no-restart
 ExecStart=/usr/bin/sing-box run -c /etc/sing-box/config.json
 WorkingDirectory=/var/lib/sing-box
 User=sing-box

@@ -11,7 +11,7 @@
 # hence the relative path. Runtime entry point is /etc/dae/config.dae.
 #
 # Node pool, latency tests and failover live in sing-box; see
-# /usr/share/router/sing-box/base.json and sing-box.service ExecStartPre.
+# /usr/share/network-services/sing-box/base.json and sing-box.service ExecStartPre.
 
 include {
     config.d/*.dae
